@@ -2,7 +2,10 @@
 
 <!-- ADD STEP -->
 <div class="card mb-3">
-    <form method="POST" action="/templates/<%= template.id %>/steps/create">
+    <form method="POST" action="/templates/<%= template.id %>/steps/create"
+		onsubmit="if(!this.title.value.trim()){alert('Step title required');return false;}">
+	<div class="d-flex gap-2">
+		<input class="form-control" name="title" placeholder="New Step">
         <div class="d-flex gap-2">
             <input class="form-control" name="title" placeholder="New Step">
             <button class="btn btn-success">+ Add Step</button>

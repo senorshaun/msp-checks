@@ -1,9 +1,10 @@
 <h2>Customers</h2>
 
 <div class="card mb-3">
-    <form method="POST" action="/customers/create">
-        <div class="d-flex gap-2">
-            <input class="form-control" name="name" placeholder="New Customer Name">
+    <form method="POST" action="/customers/create"
+        onsubmit="if(!this.name.value.trim()){alert('Name required');return false;}">
+		<div class="d-flex gap-2">
+			<input class="form-control" name="name" placeholder="New Customer Name">
             <button class="btn btn-success">+ Add Customer</button>
         </div>
     </form>

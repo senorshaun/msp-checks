@@ -1,8 +1,9 @@
 <h2>Schedules</h2>
 
 <div class="card mb-3">
-<form method="POST" action="/schedules/create">
-    <input class="form-control mb-2" name="name" placeholder="Name">
+<form method="POST" action="/schedules/create"
+	onsubmit="if(!this.name.value.trim()){alert('Name required');return false;}">
+   <input class="form-control mb-2" name="name" placeholder="Name">
 
     <div class="row">
         <div class="col">
@@ -28,11 +29,10 @@
 
 <% schedules.forEach(s => { %>
 <div class="card mb-2">
-<form method="POST" action="/schedules/update">
-
-    <input type="hidden" name="id" value="<%= s.id %>">
-
-    <input class="form-control mb-1" name="name" value="<%= s.name %>">
+<form method="POST" action="/schedules/update"
+	onsubmit="if(!this.name.value.trim()){alert('Name required');return false;}">
+   <input type="hidden" name="id" value="<%= s.id %>">
+   <input class="form-control mb-1" name="name" value="<%= s.name %>">
 
     <button class="btn btn-primary btn-sm">Save</button>
 </form>
