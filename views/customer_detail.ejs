@@ -1,0 +1,46 @@
+<h2><%=customer.name%></h2>
+
+<form method="POST" action="/customers/<%=customer.id%>/add-assignment">
+<select name="template_id">
+<% templates.forEach(t=>{ %>
+<option value="<%=t.id%>"><%=t.name%></option>
+<% }) %>
+</select>
+
+<select name="schedule_id">
+<% schedules.forEach(s=>{ %>
+<option value="<%=s.id%>"><%=s.name%></option>
+<% }) %>
+</select>
+
+<select name="group_id">
+<% groups.forEach(g=>{ %>
+<option value="<%=g.id%>"><%=g.name%></option>
+<% }) %>
+</select>
+
+<button>Add</button>
+</form>
+
+<hr>
+
+<% assignments.forEach(a=>{ %>
+<div>
+<%=a.template_name%> - <%=a.schedule_name%>
+
+<select onchange="updateGroup(<%=a.id%>,this.value)">
+<% groups.forEach(g=>{ %>
+<option value="<%=g.id%>" <%=g.id===a.group_id?'selected':''%>>
+<%=g.name%>
+</option>
+<% }) %>
+</select>
+</div>
+<% }) %>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+function updateGroup(id,group){
+axios.post('/customers/update-group',{assignment_id:id,group_id:group});
+}
+</script>

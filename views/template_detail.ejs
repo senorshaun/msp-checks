@@ -1,0 +1,76 @@
+<h2><%= template.name %></h2>
+
+<!-- ADD STEP -->
+<div class="card mb-3">
+    <form method="POST" action="/templates/<%= template.id %>/steps/create">
+        <div class="d-flex gap-2">
+            <input class="form-control" name="title" placeholder="New Step">
+            <button class="btn btn-success">+ Add Step</button>
+        </div>
+    </form>
+</div>
+
+<!-- STEPS LIST -->
+<div id="stepsList">
+    <% steps.forEach(step => { %>
+        <div class="card mb-2 d-flex flex-row justify-content-between align-items-center"
+             data-id="<%= step.id %>">
+
+            <div class="d-flex align-items-center gap-2">
+                <span class="handle" style="cursor:grab;">☰</span>
+
+                <input class="form-control step-title"
+                       value="<%= step.title %>"
+                       onchange="updateStep(<%= step.id %>, this.value)">
+            </div>
+
+            <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-danger"
+                        onclick="deleteStep(<%= step.id %>)">
+                    Delete
+                </button>
+            </div>
+        </div>
+    <% }) %>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+<!-- Drag & Drop -->
+<script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+
+<script>
+/* ---------------- UPDATE STEP ---------------- */
+async function updateStep(id, title) {
+    await axios.post('/templates/steps/update', {
+        step_id: id,
+        title
+    });
+}
+
+/* ---------------- DELETE STEP ---------------- */
+async function deleteStep(id) {
+    await axios.post('/templates/steps/delete', {
+        step_id: id
+    });
+
+    location.reload();
+}
+
+/* ---------------- REORDER ---------------- */
+const el = document.getElementById('stepsList');
+
+new Sortable(el, {
+    animation: 150,
+    handle: '.handle',
+    onEnd: async function () {
+        const orderedIds = [...el.children].map(x =>
+            x.getAttribute('data-id')
+        );
+
+        await axios.post(`/templates/<%= template.id %>/steps/reorder`, {
+            orderedIds
+        });
+    }
+});
+</script>

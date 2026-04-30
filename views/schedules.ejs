@@ -1,0 +1,40 @@
+<h2>Schedules</h2>
+
+<div class="card mb-3">
+<form method="POST" action="/schedules/create">
+    <input class="form-control mb-2" name="name" placeholder="Name">
+
+    <div class="row">
+        <div class="col">
+            <select class="form-select" name="frequency">
+                <option>daily</option>
+                <option>weekly</option>
+                <option>monthly</option>
+            </select>
+        </div>
+
+        <div class="col">
+            <input class="form-control" name="interval_value" placeholder="Interval">
+        </div>
+    </div>
+
+    <input class="form-control mt-2" name="day_of_week" placeholder="mon,tue">
+    <input class="form-control mt-2" name="day_of_month" placeholder="15">
+    <input class="form-control mt-2" type="date" name="start_date">
+
+    <button class="btn btn-success mt-2">Create</button>
+</form>
+</div>
+
+<% schedules.forEach(s => { %>
+<div class="card mb-2">
+<form method="POST" action="/schedules/update">
+
+    <input type="hidden" name="id" value="<%= s.id %>">
+
+    <input class="form-control mb-1" name="name" value="<%= s.name %>">
+
+    <button class="btn btn-primary btn-sm">Save</button>
+</form>
+</div>
+<% }) %>

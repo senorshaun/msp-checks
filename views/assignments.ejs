@@ -1,0 +1,13 @@
+<h2>Assignments</h2>
+
+<table>
+<tr><th>Template</th><th>Customer</th><th>Group</th></tr>
+
+<% assignments.forEach(a=>{ %>
+<tr>
+<td><%=a.template_name%></td>
+<td><%=a.customer_name%></td>
+<td><%=a.group_name%></td>
+</tr>
+<% }) %>
+</table>

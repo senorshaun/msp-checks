@@ -1,0 +1,74 @@
+<h2 class="mb-3">Dashboard</h2>
+
+<div class="card mb-3">
+    <div class="d-flex gap-3">
+        <select id="customerFilter" class="form-select w-25">
+            <option value="">All Customers</option>
+        </select>
+
+        <button class="btn btn-primary" onclick="toggleView('calendar')">
+            Calendar
+        </button>
+
+        <button class="btn btn-primary" onclick="toggleView('list')">
+            List
+        </button>
+    </div>
+</div>
+
+<div id="calendarView"></div>
+<div id="listView" style="display:none;"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/index.global.min.js"></script>
+
+<script>
+const tasks = <%- JSON.stringify(tasks) %>;
+
+/* ---------------- CALENDAR ---------------- */
+
+const calendar = new FullCalendar.Calendar(
+    document.getElementById('calendarView'),
+{
+    initialView: 'dayGridMonth',
+    events: tasks.map(t => ({
+        id: t.id,
+        title: t.name,
+        date: t.due_date,
+        color:
+            t.status_name === 'complete'
+                ? '#22c55e'
+                : t.status_name === 'blocked'
+                ? '#ef4444'
+                : '#3b82f6'
+    })),
+    eventClick: e => loadTask(e.event.id)
+});
+
+calendar.render();
+
+/* ---------------- LIST VIEW ---------------- */
+
+function renderList() {
+    const html = tasks.map(t => `
+        <div class="card mb-2" onclick="loadTask(${t.id})">
+            <strong>${t.name}</strong><br>
+            <small>${t.customer_name}</small><br>
+            <span class="pill">${t.status_name}</span>
+        </div>
+    `).join('');
+
+    document.getElementById('listView').innerHTML = html;
+}
+
+renderList();
+
+/* ---------------- TOGGLE ---------------- */
+
+function toggleView(view) {
+    document.getElementById('calendarView').style.display =
+        view === 'calendar' ? 'block' : 'none';
+
+    document.getElementById('listView').style.display =
+        view === 'list' ? 'block' : 'none';
+}
+</script>
