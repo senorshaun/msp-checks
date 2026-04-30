@@ -3,36 +3,39 @@ const router = express.Router();
 const db = require('../db');
 
 router.get('/', async (req, res) => {
-    const [schedules] = await db.query(`SELECT * FROM schedules`);
-    res.render('schedules', { schedules });
+    const [schedules] = await db.query(`CALL get_schedules()`);
+
+	res.render('schedules', {
+		schedules: schedules[0]
+	});
 });
 
 router.post('/create', async (req, res) => {
     const { name, frequency, interval_value, day_of_week, day_of_month, start_date } = req.body;
 
-    await db.query(`
-        INSERT INTO schedules 
-        (name, frequency, interval_value, day_of_week, day_of_month, start_date, modified_at, modified_by)
-        VALUES (?, ?, ?, ?, ?, ?, NOW(), 1)
-    `, [name, frequency, interval_value, day_of_week, day_of_month, start_date]);
+	await db.query(`CALL create_schedule(?, ?, ?, ?, ?, ?, ?)`, [
+		req.body.name,
+		req.body.frequency,
+		req.body.interval_value,
+		req.body.day_of_week,
+		req.body.day_of_month,
+		req.body.start_date,
+		1
+	]);
 
     res.redirect('/schedules');
 });
 
 router.post('/update', async (req, res) => {
-    await db.query(`
-        UPDATE schedules SET
-            name=?, frequency=?, interval_value=?, day_of_week=?, day_of_month=?,
-            modified_at=NOW(), modified_by=1
-        WHERE id=?
-    `, [
-        req.body.name,
-        req.body.frequency,
-        req.body.interval_value,
-        req.body.day_of_week,
-        req.body.day_of_month,
-        req.body.id
-    ]);
+    await db.query(`CALL update_schedule(?, ?, ?, ?, ?, ?, ?)`, [
+		req.body.id,
+		req.body.name,
+		req.body.frequency,
+		req.body.interval_value,
+		req.body.day_of_week,
+		req.body.day_of_month,
+		1
+	]);
 
     res.redirect('/schedules');
 });

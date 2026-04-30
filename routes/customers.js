@@ -3,29 +3,27 @@ const router = express.Router();
 const db = require('../db');
 
 router.get('/', async (req, res) => {
-    const [customers] = await db.query(`SELECT * FROM customers`);
-    res.render('customers', { customers });
+    const [customers] = await db.query(`CALL get_customers()`);
+
+	res.render('customers', {
+		customers: customers[0]
+	});
 });
 
 router.get('/:id', async (req, res) => {
-    const id = req.params.id;
+    const [customer] = await db.query(`CALL get_customer(?)`, [req.params.id]);
+	const [assignments] = await db.query(`CALL get_customer_assignments(?)`, [req.params.id]);
+	const [templates] = await db.query(`CALL get_task_templates()`);
+	const [groups] = await db.query(`CALL get_groups()`);
+	const [schedules] = await db.query(`CALL get_schedules()`);
 
-    const [customer] = await db.query(`SELECT * FROM customers WHERE id=?`, [id]);
-
-    const [assignments] = await db.query(`
-        SELECT ta.*, t.name template_name, g.name group_name, s.name schedule_name
-        FROM template_assignments ta
-        JOIN task_templates t ON ta.template_id=t.id
-        JOIN groups g ON ta.group_id=g.id
-        JOIN schedules s ON ta.schedule_id=s.id
-        WHERE ta.customer_id=?
-    `, [id]);
-
-    const [templates] = await db.query(`SELECT * FROM task_templates`);
-    const [groups] = await db.query(`SELECT * FROM groups`);
-    const [schedules] = await db.query(`SELECT * FROM schedules`);
-
-    res.render('customer_detail', { customer: customer[0], assignments, templates, groups, schedules });
+	res.render('customer_detail', {
+		customer: customer[0][0],
+		assignments: assignments[0],
+		templates: templates[0],
+		groups: groups[0],
+		schedules: schedules[0]
+	});
 });
 
 router.post('/:id/add-assignment', async (req, res) => {
@@ -40,24 +38,13 @@ router.post('/:id/add-assignment', async (req, res) => {
 });
 
 router.post('/update-group', async (req, res) => {
-    await db.query(`
-        UPDATE template_assignments
-        SET group_id=?, modified_at=NOW()
-        WHERE id=?
-    `, [req.body.group_id, req.body.assignment_id]);
+    await db.query(`CALL update_template_assignment_group(?, ?, ?)`, [
+		req.body.assignment_id,
+		req.body.group_id,
+		1
+	]);
 
     res.sendStatus(200);
-});
-
-router.post('/create', async (req, res) => {
-    const { name } = req.body;
-
-    await db.query(`
-        INSERT INTO customers (name, modified_at, modified_by)
-        VALUES (?, NOW(), 1)
-    `, [name]);
-
-    res.redirect('/customers');
 });
 
 module.exports = router;

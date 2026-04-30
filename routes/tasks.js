@@ -3,31 +3,23 @@ const router = express.Router();
 const db = require('../db');
 
 router.get('/', async (req, res) => {
-    const [tasks] = await db.query(`
-        SELECT t.*, c.name customer_name, s.name status_name
-        FROM tasks t
-        JOIN customers c ON t.customer_id = c.id
-        JOIN task_statuses s ON t.status_id = s.id
-    `);
+    const [tasks] = await db.query(`CALL get_tasks()`);
+	const [customers] = await db.query(`CALL get_customers()`);
 
-    const [customers] = await db.query(`SELECT * FROM customers`);
-
-    res.render('dashboard', { tasks, customers });
+	res.render('dashboard', {
+		tasks: tasks[0],
+		customers: customers[0]
+	});
 });
 
 router.get('/task/:id', async (req, res) => {
-    const [task] = await db.query(`
-        SELECT t.*, c.name customer_name
-        FROM tasks t
-        JOIN customers c ON t.customer_id = c.id
-        WHERE t.id = ?
-    `, [req.params.id]);
+    const [task] = await db.query(`CALL get_task(?)`, [req.params.id]);
+	const [steps] = await db.query(`CALL get_task_steps(?)`, [req.params.id]);
 
-    const [steps] = await db.query(`
-        SELECT * FROM task_steps WHERE task_id = ?
-    `, [req.params.id]);
-
-    res.json({ task: task[0], steps });
+	res.json({
+		task: task[0][0],
+		steps: steps[0]
+	});
 });
 
 router.post('/step/update', async (req, res) => {
