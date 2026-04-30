@@ -62,6 +62,13 @@ async function updateStep(id, completed, notes = null) {
 /* ---------------- TASK COMPLETE ---------------- */
 
 async function completeTask() {
+	// Prevent completion if any step is unchecked
+   const stepCheckboxes = document.querySelectorAll('#drawerSteps input[type="checkbox"]');
+   const allChecked = Array.from(stepCheckboxes).every(chk => chk.checked);
+   if (!allChecked) {
+     alert('All steps must be completed before finishing this task.');
+     return;
+   }
     await axios.post('/task/complete', {
         task_id: currentTaskId,
         user_id: 1
