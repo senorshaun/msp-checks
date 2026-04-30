@@ -945,6 +945,17 @@ BEGIN
     INTO v_before
     FROM tasks
     WHERE id = p_task_id;
+	
+	IF p_status_id = (SELECT id FROM task_statuses WHERE name = 'complete') THEN
+		UPDATE task_steps
+		SET 
+			is_completed = 1,
+			completed_at = NOW(),
+			completed_by = p_user_id,
+			notes = 'auto-completed'
+		WHERE task_id = p_task_id
+		  AND is_completed = 0;
+	END IF;
 
     UPDATE tasks
     SET
