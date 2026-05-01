@@ -1,5 +1,66 @@
 <h2>Assignments</h2>
 
+<h3>Create Assignment</h3>
+
+<form method="POST" action="/assignments/create" class="mb-3">
+    <div class="d-flex gap-2 flex-wrap">
+
+        <!-- Template -->
+		<div class="searchable-select">
+			<input type="text" class="search-input" placeholder="Select Template">
+			<input type="hidden" name="template_id" required>
+			<div class="search-list">
+				<% templates.forEach(t => { %>
+					<div class="search-item" data-value="<%= t.id %>">
+						<%= t.name %>
+					</div>
+				<% }) %>
+			</div>
+		</div>
+
+        <!-- Schedule -->
+		<div class="searchable-select">
+			<input type="text" class="search-input" placeholder="Select Schedule">
+			<input type="hidden" name="schedule_id" required>
+			<div class="search-list">
+				<% schedules.forEach(s => { %>
+					<div class="search-item" data-value="<%= s.id %>">
+						<%= s.name %>
+					</div>
+				<% }) %>
+			</div>
+		</div>
+
+        <!-- Group -->
+        <div class="searchable-select">
+			<input type="text" class="search-input" placeholder="Select Group">
+			<input type="hidden" name="groups_id" required>
+			<div class="search-list">
+				<% groups.forEach(g => { %>
+					<div class="search-item" data-value="<%= g.id %>">
+						<%= g.name %>
+					</div>
+				<% }) %>
+			</div>
+		</div>
+
+        <!-- MULTI CUSTOMER -->
+		<div class="searchable-select">
+			<input type="text" class="search-input" placeholder="Select Customer">
+			<input type="hidden" name="customer_ids" multiple size="6" required>
+			<div class="search-list">
+				<% customers.forEach(c => { %>
+					<div class="search-item" data-value="<%= c.id %>">
+						<%= c.name %>
+					</div>
+				<% }) %>
+			</div>
+		</div>
+		
+        <button type="submit">Create Assignment</button>
+    </div>
+</form>
+
 <table>
 <tr><th>Template</th><th>Customer</th><th>Group</th></tr>
 

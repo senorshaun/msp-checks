@@ -1,46 +1,212 @@
 <h2><%=customer.name%></h2>
 
-<form method="POST" action="/customers/<%=customer.id%>/add-assignment">
-<select name="template_id">
-<% templates.forEach(t=>{ %>
-<option value="<%=t.id%>"><%=t.name%></option>
-<% }) %>
-</select>
-
-<select name="schedule_id">
-<% schedules.forEach(s=>{ %>
-<option value="<%=s.id%>"><%=s.name%></option>
-<% }) %>
-</select>
-
-<select name="group_id">
-<% groups.forEach(g=>{ %>
-<option value="<%=g.id%>"><%=g.name%></option>
-<% }) %>
-</select>
-
-<button>Add</button>
-</form>
+<button onclick="openAssignModal()">Add Assignment</button>
+<button onclick="openCopyModal()">Copy Assignments From</button>
 
 <hr>
 
 <% assignments.forEach(a=>{ %>
 <div>
-<%=a.template_name%> - <%=a.schedule_name%>
+	<%=a.template_name%> - <%=a.schedule_name%>
 
-<select onchange="updateGroup(<%=a.id%>,this.value)">
-<% groups.forEach(g=>{ %>
-<option value="<%=g.id%>" <%=g.id===a.group_id?'selected':''%>>
-<%=g.name%>
-</option>
-<% }) %>
-</select>
+	<select onchange="updateGroup(<%=a.id%>,this.value)">
+		<% groups.forEach(g=>{ %>
+		<option value="<%=g.id%>" <%=g.id===a.group_id?'selected':''%>>
+			<%=g.name%>
+		</option>
+		<% }) %>
+	</select>
 </div>
 <% }) %>
+
+<div id="assignModal" class="overlay-modal hidden">
+    <div class="modal-content">
+        <h3>Add Assignment</h3>
+		
+		<!-- TEMPLATE -->
+		<div class="modal-group">
+			<label>Template</label>
+			<div class="searchable-select">
+				<input type="text" class="search-input" placeholder="Select Template">
+				<input type="hidden" id="assign_template">
+
+				<div class="search-list">
+					<% templates.forEach(t => { %>
+						<div class="search-item" data-value="<%= t.id %>">
+							<%= t.name %>
+						</div>
+					<% }) %>
+				</div>
+			</div>
+		</div>
+
+        <!-- SCHEDULE -->
+		<div class="modal-group">
+			<label>Schedule</label>
+			<div class="searchable-select">
+				<input type="text" class="search-input" placeholder="Select Schedule">
+				<input type="hidden" id="assign_schedule">
+
+				<div class="search-list">
+					<% schedules.forEach(s => { %>
+						<div class="search-item" data-value="<%= s.id %>">
+							<%= s.name %>
+						</div>
+					<% }) %>
+				</div>
+			</div>
+		</div>
+
+        <!-- GROUP -->
+		<div class="modal-group">
+			<label>Group</label>
+			<div class="searchable-select">
+				<input type="text" class="search-input" placeholder="Optional Group">
+				<input type="hidden" id="assign_group">
+
+				<div class="search-list">
+					<% groups.forEach(g => { %>
+						<div class="search-item" data-value="<%= g.id %>">
+							<%= g.name %>
+						</div>
+					<% }) %>
+				</div>
+			</div>
+		</div>
+		<div class="modal-group">
+			<div class="mt-2">
+				<button onclick="submitAssignment()">Save</button>
+				<button onclick="closeAssignModal()">Cancel</button>
+			</div>
+		</div>
+
+    </div>
+</div>
+
+
+<div id="copyModal" class="overlay-modal hidden">
+    <div class="modal-content">
+
+        <h3>Copy Assignments</h3>
+		<div class="modal-group">
+			<label>Source Customer</label>
+			<div class="searchable-select">
+				<input type="text" class="search-input" placeholder="Select Customer">
+				<input type="hidden" name="copySourceCustomer">
+				<div class="search-list">
+					<% customers.forEach(c => { %>
+						<div class="search-item" data-value="<%= c.id %>">
+							<%= c.name %>
+						</div>
+					<% }) %>
+				</div>
+			</div>
+			
+			<button onclick="loadAssignments()">Load</button>
+		</div>
+
+        <div id="assignmentList" class="mt-2"></div>
+		<div class="modal-group">
+			<div class="mt-2">
+				<button onclick="submitCopy()">Copy Selected</button>
+				<button onclick="closeCopyModal()">Cancel</button>
+			</div>
+		</div>
+    </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 <script>
 function updateGroup(id,group){
-axios.post('/customers/update-group',{assignment_id:id,group_id:group});
+	axios.post('/customers/update-group',{assignment_id:id,group_id:group});
+}
+</script>
+<script>
+function openAssignModal() {
+    document.getElementById('assignModal').classList.remove('hidden');
+}
+
+function closeAssignModal() {
+    document.getElementById('assignModal').classList.add('hidden');
+}
+
+async function submitAssignment() {
+    const template = document.getElementById('assign_template').value;
+    const schedule = document.getElementById('assign_schedule').value;
+    const group = document.getElementById('assign_group').value;
+
+    if (!template || !schedule) {
+        return alert('Template and schedule are required');
+    }
+
+    await fetch(`/customers/<%= customer.id %>/add-assignment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            template_id: template,
+            schedule_id: schedule,
+            group_id: group
+        })
+    });
+
+    location.reload();
+}
+</script>
+
+<script>
+const customerId = <%= customer.id %>;
+
+function openCopyModal() {
+    document.getElementById('copyModal').classList.remove('hidden');
+}
+
+function closeCopyModal() {
+    document.getElementById('copyModal').classList.add('hidden');
+}
+
+async function loadAssignments() {
+    const sourceId = document.getElementById('copySourceCustomer').value;
+
+    if (!sourceId) return alert('Select a customer');
+
+    const res = await fetch(`/customers/${sourceId}/assignments/json`);
+    const data = await res.json();
+
+    const container = document.getElementById('assignmentList');
+    container.innerHTML = '';
+
+    data.forEach(a => {
+        container.innerHTML += `
+            <div>
+                <label>
+                    <input type="checkbox" value="${a.id}">
+                    ${a.template_name} (${a.schedule_name})
+                </label>
+            </div>
+        `;
+    });
+}
+
+async function submitCopy() {
+    const sourceId = document.getElementById('copySourceCustomer').value;
+
+    const selected = Array.from(
+        document.querySelectorAll('#assignmentList input:checked')
+    ).map(x => x.value);
+
+    if (selected.length === 0) {
+        return alert('No assignments selected');
+    }
+
+    await fetch(`/customers/${customerId}/copy-assignments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            source_customer_id: sourceId,
+            assignment_ids: selected
+        })
+    });
+
+    location.reload();
 }
 </script>

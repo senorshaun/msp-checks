@@ -13,6 +13,11 @@ router.get('/', async (req, res) => {
 
 /* ---------------- CREATE TEMPLATE ---------------- */
 router.post('/create', async (req, res) => {
+	const error = requireFields(req.body, ['name']);
+	if (errors.length) {
+		return res.status(400).send(errors.join(', '));
+	}
+	
     const conn = await db.getConnection();
 
     try {
@@ -20,7 +25,7 @@ router.post('/create', async (req, res) => {
 
         /* ---------------- CREATE TEMPLATE ---------------- */
 		const [rows] = await db.query(`CALL create_task_template(?, ?)`, [
-			req.body.name,
+			req.body.name.trim(),
 			1
 		]);
 
@@ -42,8 +47,6 @@ router.post('/create', async (req, res) => {
 ===================================================== */
 
 router.get('/:id', async (req, res) => {
-    const templateId = req.params.id;
-
     const [results] = await db.query(`CALL get_template_detail(?)`, [req.params.id]);
 
 	res.render('template_detail', {
@@ -54,22 +57,30 @@ router.get('/:id', async (req, res) => {
 
 /* ---------------- ADD STEP ---------------- */
 router.post('/:id/steps/create', async (req, res) => {
-    const templateId = req.params.id;
+	const error = requireFields(req.body, ['title']);
+	if (errors.length) {
+		return res.status(400).send(errors.join(', '));
+	}
 
     await db.query(`CALL add_template_step(?, ?, ?)`, [
 		req.params.id,
-		req.body.title,
+		req.body.title.trim(),
 		1
 	]);
 
-    res.redirect(`/templates/${templateId}`);
+    res.redirect(`/templates/${req.params.id}`);
 });
 
 /* ---------------- UPDATE STEP ---------------- */
 router.post('/steps/update', async (req, res) => {
+	const error = requireFields(req.body, ['title']);
+	if (errors.length) {
+		return res.status(400).send(errors.join(', '));
+	}
+	
     await db.query(`CALL update_template_step(?, ?, ?)`, [
 		req.body.step_id,
-		req.body.title,
+		req.body.title.trim(),
 		1
 	]);
 

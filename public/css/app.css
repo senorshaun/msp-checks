@@ -88,3 +88,74 @@ td, th {
     border-radius: 999px;
     font-size: 12px;
 }
+
+/* Modals */
+
+.overlay-modal {
+    position: fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background: rgba(0,0,0,0.5);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+	z-index: 9999;
+}
+
+.overlay-modal.hidden {
+    display:none;
+}
+
+.overlay-modal .modal-content {
+	display:flex;
+	align-items:center;
+    background:white;
+    padding:20px;
+    border-radius:8px;
+	min-width:40%;
+    width:400px;
+	min-height:40%;
+    max-height:80%;
+    overflow:auto;
+}
+
+.overlay-modal .modal-group {
+    display: flex;
+    flex-direction: column;
+	width: fit-content;
+}
+.overlay-modal .form-group label {
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+/* Search List */
+.searchable-select {
+    position: relative;
+    width: 250px;
+}
+
+.search-input {
+    width: 100%;
+    padding: 6px;
+}
+
+.search-list {
+    position: absolute;
+    width: 100%;
+    background: white;
+    border: 1px solid #ccc;
+    max-height: 200px;
+    overflow-y: auto;
+    display: none;
+    z-index: 1000;
+}
+
+.search-item {
+    padding: 6px;
+    cursor: pointer;
+}
+
+.search-item:hover {
+    background: #eee;
+}

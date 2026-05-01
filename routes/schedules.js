@@ -11,10 +11,15 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/create', async (req, res) => {
-    const { name, frequency, interval_value, day_of_week, day_of_month, start_date } = req.body;
+	const error = requireFields(req.body, ['name']);
+	if (errors.length) {
+		return res.status(400).send(errors.join(', '));
+	}
+	
+	const { name, frequency, interval_value, day_of_week, day_of_month, start_date } = req.body;
 
 	await db.query(`CALL create_schedule(?, ?, ?, ?, ?, ?, ?)`, [
-		req.body.name,
+		req.body.name.trim(),
 		req.body.frequency,
 		req.body.interval_value,
 		req.body.day_of_week,
