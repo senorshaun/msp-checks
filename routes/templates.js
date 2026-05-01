@@ -13,7 +13,7 @@ router.get('/', async (req, res) => {
 
 /* ---------------- CREATE TEMPLATE ---------------- */
 router.post('/create', async (req, res) => {
-	const error = requireFields(req.body, ['name']);
+	const errors = requireFields(req.body, ['name']);
 	if (errors.length) {
 		return res.status(400).send(errors.join(', '));
 	}
@@ -57,23 +57,36 @@ router.get('/:id', async (req, res) => {
 
 /* ---------------- ADD STEP ---------------- */
 router.post('/:id/steps/create', async (req, res) => {
-	const error = requireFields(req.body, ['title']);
+	const errors = requireFields(req.body, ['title']);
 	if (errors.length) {
 		return res.status(400).send(errors.join(', '));
 	}
+	const title = req.body.title.trim();
 
-    await db.query(`CALL add_template_step(?, ?, ?)`, [
+    await db.query(`CALL create_template_step(?, ?, ?)`, [
 		req.params.id,
-		req.body.title.trim(),
+		title,
 		1
 	]);
+	
+	const newId = rows?.[0]?.[0]?.id;
 
-    res.redirect(`/templates/${req.params.id}`);
+    if (!newId) {
+        return res.status(500).send('Failed to get new step ID');
+    }
+
+    res.json({
+		step: {
+			id: newId,
+			title,
+			sort_order: 1
+		}
+	});
 });
 
 /* ---------------- UPDATE STEP ---------------- */
 router.post('/steps/update', async (req, res) => {
-	const error = requireFields(req.body, ['title']);
+	const errors = requireFields(req.body, ['title']);
 	if (errors.length) {
 		return res.status(400).send(errors.join(', '));
 	}

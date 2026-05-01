@@ -1,79 +1,110 @@
-let currentTaskId = null;
+/* ---------------- MODAL CONTROL ---------------- */
+window.openModal = function (html) {
+    const modal = document.getElementById('globalModal');
+    const content = document.getElementById('globalModalContent');
 
-function openDrawer() {
-    document.getElementById('taskDrawer').style.right = '0';
+    content.innerHTML = html;
+    modal.classList.remove('hidden');
+};
+
+window.closeModal = function () {
+    document.getElementById('globalModal').classList.add('hidden');
+};
+
+function initSearchableSelects() {
+    document.querySelectorAll('.searchable-select').forEach(initSearchable);
 }
 
-function closeDrawer() {
-    document.getElementById('taskDrawer').style.right = '-520px';
-    currentTaskId = null;
-}
+function buildSearchableSelect({
+    name,
+    data,
+    placeholder = 'Select...',
+    valueField = 'id',
+    labelField = 'name',
+    multiple = false
+}) {
+    const itemsHtml = data.map(item => `
+		<div class="search-item" data-value="${item[valueField]}">
+			${item[labelField]}
+		</div>
+    `).join('');
 
-/* ---------------- TASK LOADING ---------------- */
+    return `
+        <div class="searchable-select ${multiple ? 'multi' : ''}" data-name="${name}">
+            <input type="text" class="search-input" placeholder="${placeholder}">
+            ${
+                multiple
+                ? `<div class="multi-values"></div>`
+                : `<input type="hidden" name="${name}">`
+            }
 
-async function loadTask(id) {
-    const res = await axios.get(`/task/${id}`);
-    const task = res.data.task;
-    const steps = res.data.steps;
-
-    currentTaskId = id;
-
-    document.getElementById('drawerTitle').innerText = task.name;
-    document.getElementById('drawerMeta').innerText =
-        `${task.customer_name} • Due ${task.due_date}`;
-
-    let html = '';
-
-    steps.forEach(step => {
-        html += `
-        <div class="card mb-2">
-            <label>
-                <input type="checkbox"
-                    ${step.is_completed ? "checked" : ""}
-                    onchange="updateStep(${step.id}, this.checked)">
-                <strong>${step.title}</strong>
-            </label>
-
-            <textarea class="form-control mt-2"
-                placeholder="Notes..."
-                onblur="updateStep(${step.id}, ${step.is_completed}, this.value)">
-                ${step.notes || ''}
-            </textarea>
+            <div class="search-list">
+                ${itemsHtml}
+            </div>
         </div>
-        `;
-    });
-
-    document.getElementById('drawerSteps').innerHTML = html;
-
-    openDrawer();
+    `;
 }
 
-/* ---------------- STEP UPDATE ---------------- */
+window.updateInlineField = async function ({
+    id,
+    btn,
+    inputSelector,
+    endpoint,
+    fieldName = 'name'
+}) {
+    const container = btn.closest('[data-inline-edit]');
+    const input = container.querySelector(inputSelector);
+    const status = container.querySelector('.save-status');
 
-async function updateStep(id, completed, notes = null) {
-    await axios.post('/step/update', {
-        step_id: id,
-        completed,
-        notes,
-        user_id: 1
-    });
-}
+    const value = input.value.trim();
 
-/* ---------------- TASK COMPLETE ---------------- */
+    if (!value) {
+        if (status) {
+            status.textContent = `${fieldName} required`;
+            status.style.color = 'red';
+        }
+        return;
+    }
 
-async function completeTask() {
-	// Prevent completion if any step is unchecked
-   const stepCheckboxes = document.querySelectorAll('#drawerSteps input[type="checkbox"]');
-   const allChecked = Array.from(stepCheckboxes).every(chk => chk.checked);
-   if (!allChecked) {
-     alert('All steps must be completed before finishing this task.');
-     return;
-   }
-    await axios.post('/task/complete', {
-        task_id: currentTaskId,
-        user_id: 1
-    });
+    btn.disabled = true;
 
-    closeDrawer();
-    location.reload();
+    if (status) {
+        status.textContent = 'Saving...';
+        status.style.color = 'gray';
+    }
+
+    try {
+        const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id,
+                [fieldName]: value
+            })
+        });
+
+        if (!res.ok) throw new Error();
+
+        if (status) {
+            status.textContent = 'Saved';
+            status.style.color = 'green';
+            setTimeout(() => status.textContent = '', 2000);
+        }
+
+    } catch (err) {
+        if (status) {
+            status.textContent = 'Error saving';
+            status.style.color = 'red';
+        }
+    } finally {
+        btn.disabled = false;
+    }
+};
+
+function debounce(fn, delay = 500) {
+    let timer;
+    return (...args) => {
+        clearTimeout(timer);
+        timer = setTimeout(() => fn(...args), delay);
+    };
 }

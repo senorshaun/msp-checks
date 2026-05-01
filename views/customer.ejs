@@ -1,0 +1,208 @@
+<h2><%=customer.name%></h2>
+
+<div style="margin-bottom: 15px;">
+    <label>Select Customer</label>
+
+    <div class="searchable-select" id="customerSwitcher">
+        <input type="text" class="search-input" value="<%= customer.name %>" placeholder="Search Customer">
+        <input type="hidden" id="selectedCustomer">
+
+        <div class="search-list">
+            <% customers.forEach(c => { %>
+                <div class="search-item" data-value="<%= c.id %>">
+                    <%= c.name %>
+                </div>
+            <% }) %>
+        </div>
+    </div>
+</div>
+
+<button onclick="openAssignModal()">Add Assignment</button>
+<button onclick="openCopyModal()">Copy Assignments From</button>
+
+<hr>
+
+<% assignments.forEach(a=>{ %>
+<div>
+	<%=a.template_name%> - <%=a.schedule_name%>
+
+	<select onchange="updateGroup(<%=a.id%>,this.value)">
+		<% groups.forEach(g=>{ %>
+		<option value="<%=g.id%>" <%=g.id===a.group_id?'selected':''%>>
+			<%=g.name%>
+		</option>
+		<% }) %>
+	</select>
+</div>
+<% }) %>
+
+<script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+<script>
+document.querySelector('#customerSwitcher').addEventListener('click', function (e) {
+    if (e.target.classList.contains('search-item')) {
+        const id = e.target.dataset.value;
+        window.location.href = `/customers/${id}`;
+    }
+});
+</script>
+<script>
+function updateGroup(id,group){
+	fetch('/customers/update-group',{
+		method: 'POST',
+		headers: {'Content-Type': 'application/json'},
+		body: JSON.stringify({
+			assignment_id:id,
+			group_id:group
+			})
+		});
+}
+</script>
+
+<script>
+document.querySelector('#customerSwitcher .search-input').focus();
+const templates = <%- JSON.stringify(templates) %>;
+const schedules = <%- JSON.stringify(schedules) %>;
+const groups = <%- JSON.stringify(groups) %>;
+const customers = <%- JSON.stringify(customers) %>;
+
+function openAddAssignmentModal() {
+    openModal(`
+        <h3>Add Assignment</h3>
+
+		<div class="form-group">
+			<label>Template</label>
+			${buildSearchableSelect({
+				name: 'template_id',
+				data: templates,
+				placeholder: 'Select Template'
+			})}
+		</div>
+
+		<div class="form-group">
+			<label>Schedule</label>
+			${buildSearchableSelect({
+				name: 'schedule_id',
+				data: schedules,
+				placeholder: 'Select Schedule'
+			})}
+		</div>
+
+		<div class="form-group">
+			<label>Group</label>
+			${buildSearchableSelect({
+				name: 'group_id',
+				data: groups,
+				placeholder: 'Select Group'
+			})}
+		</div>
+
+        <div style="margin-top:10px;">
+            <button onclick="submitAddAssignment()">Save</button>
+            <button onclick="closeModal()">Cancel</button>
+        </div>
+    `);
+
+    initSearchableSelects(); // important
+}
+
+async function submitAssignment() {
+	const modal = document.getElementbyID('globalModalContent');
+    const template = modal.querySelector('[name="template_id"]').value;
+    const schedule = modal.querySelector('[name="schedule_id"]').value;
+    const group = modal.querySelector('[name="group_id"]').value;
+
+    if (!template || !schedule || !group) {
+        return alert('Template, schedule, and group are required');
+    }
+
+    await fetch(`/customers/<%= customer.id %>/add-assignment`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            template_id: template,
+            schedule_id: schedule,
+            group_id: group
+        })
+    });
+
+    location.reload();
+}
+</script>
+
+<script>
+const customerId = <%= customer.id %>;
+
+<script>
+function openAddAssignmentModal() {
+    openModal(`
+        <h3>Copy Assignments</h3>
+
+        <label>Source Customer</label>
+        ${buildSearchableSelect({
+			name: 'copySourceCustomer',
+			data: customers,
+			placeholder: 'Select Source Customer'
+		});}
+
+        <button onclick="loadAssignments()">Load</button>
+
+        <div id="assignmentList" class="mt-2"></div>
+		<div class="modal-group">
+			<div class="mt-2">
+				<button onclick="submitCopy()">Copy Selected</button>
+				<button onclick="closeCopyModal()">Cancel</button>
+			</div>
+		</div>
+    `);
+
+    initSearchableSelects(); // important
+}
+
+async function loadAssignments() {
+	const modal = document.getElementbyID('globalModalContent');
+    const sourceId = modal.querySelector('[name="copySourceCustomer"]').value;
+
+    if (!sourceId) return alert('Select a customer');
+
+    const res = await fetch(`/customers/${sourceId}/assignments/json`);
+    const data = await res.json();
+
+    const container = document.getElementById('assignmentList');
+    container.innerHTML = '';
+
+    data.forEach(a => {
+        container.innerHTML += `
+            <div>
+                <label>
+                    <input type="checkbox" value="${a.id}">
+                    ${a.template_name} (${a.schedule_name})
+                </label>
+            </div>
+        `;
+    });
+}
+
+async function submitCopy() {
+    const modal = document.getElementbyID('globalModalContent');
+    const sourceId = modal.querySelector('[name="copySourceCustomer"]').value;
+
+    const selected = Array.from(
+        document.querySelectorAll('#assignmentList input:checked')
+    ).map(x => x.value);
+
+    if (selected.length === 0) {
+        return alert('No assignments selected');
+    }
+
+    await fetch(`/customers/${customerId}/copy-assignments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            source_customer_id: sourceId,
+            assignment_ids: selected
+        })
+    });
+
+    location.reload();
+}
+</script>

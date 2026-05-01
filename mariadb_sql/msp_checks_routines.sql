@@ -439,6 +439,7 @@ DECLARE v_order INT;
         'template_step', v_id, 'create',
         p_title, p_user_id
     );
+	SELECT v_id as id;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;

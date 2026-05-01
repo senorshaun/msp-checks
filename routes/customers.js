@@ -5,21 +5,29 @@ const db = require('../db');
 router.get('/', async (req, res) => {
     const [customers] = await db.query(`CALL get_customers()`);
 
-	res.render('customers', {
-		customers: customers[0]
-	});
+    if (!customers.length) {
+        return res.send('No customers exist');
+    }
+
+    // default to first customer
+    res.redirect(`/customers/${customers[0][0].id}`);
 });
 
 router.get('/:id', async (req, res) => {
-    const [customer] = await db.query(`CALL get_customer(?)`, [req.params.id]);
+    const [customerRows] = await db.query(
+        'CALL get_customer(?)',
+        [req.params.id]
+    );
+    const [allCustomers] = await db.query('CALL get_customers()');
 	const [assignments] = await db.query(`CALL get_customer_assignments(?)`, [req.params.id]);
 	const [templates] = await db.query(`CALL get_task_templates()`);
 	const [groups] = await db.query(`CALL get_groups()`);
 	const [schedules] = await db.query(`CALL get_schedules()`);
 	const [customers] = await db.query(`CALL get_customers()`);
 
-	res.render('customer_detail', {
-		customer: customer[0][0],
+	res.render('customer', {
+		customer: customerRows[0][0],
+        customers: allCustomers[0],
 		assignments: assignments[0],
 		templates: templates[0],
 		groups: groups[0],

@@ -11,20 +11,20 @@ router.get('/', async (req, res) => {
 });
 
 router.post('/create', async (req, res) => {
-	const error = requireFields(req.body, ['name']);
+	const errors = requireFields(req.body, ['name']);
 	if (errors.length) {
 		return res.status(400).send(errors.join(', '));
 	}
 	
-	const { name, frequency, interval_value, day_of_week, day_of_month, start_date } = req.body;
+	const { name, frequency, interval, day_of_week, day_of_month, start_date } = req.body;
 
 	await db.query(`CALL create_schedule(?, ?, ?, ?, ?, ?, ?)`, [
-		req.body.name.trim(),
-		req.body.frequency,
-		req.body.interval_value,
-		req.body.day_of_week,
-		req.body.day_of_month,
-		req.body.start_date,
+		name.trim(),
+		frequency,
+		interval,
+		day_of_week,
+		day_of_month,
+		start_date,
 		1
 	]);
 
@@ -32,17 +32,23 @@ router.post('/create', async (req, res) => {
 });
 
 router.post('/update', async (req, res) => {
+	const { id, name, frequency, interval, day_of_week, day_of_month } = req.body;
+	const errors = requireFields(req.body, ['name']);
+	if (errors.length) {
+		return res.status(400).send(errors.join(', '));
+	}
+
     await db.query(`CALL update_schedule(?, ?, ?, ?, ?, ?, ?)`, [
-		req.body.id,
-		req.body.name,
-		req.body.frequency,
-		req.body.interval_value,
-		req.body.day_of_week,
-		req.body.day_of_month,
+		id,
+		name.trim(),
+		frequency,
+		interval,
+		day_of_week,
+		day_of_month,
 		1
 	]);
 
-    res.redirect('/schedules');
+    res.sendStatus(200);
 });
 
 module.exports = router;

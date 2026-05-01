@@ -1,40 +1,198 @@
 <h2>Schedules</h2>
 
-<div class="card mb-3">
-<form method="POST" action="/schedules/create"
-	onsubmit="if(!this.name.value.trim()){alert('Name required');return false;}">
-   <input class="form-control mb-2" name="name" placeholder="Name">
+<button onclick="openCreateScheduleModal()">Create Schedule</button>
 
-    <div class="row">
-        <div class="col">
-            <select class="form-select" name="frequency">
-                <option>daily</option>
-                <option>weekly</option>
-                <option>monthly</option>
-            </select>
-        </div>
-
-        <div class="col">
-            <input class="form-control" name="interval_value" placeholder="Interval">
-        </div>
-    </div>
-
-    <input class="form-control mt-2" name="day_of_week" placeholder="mon,tue">
-    <input class="form-control mt-2" name="day_of_month" placeholder="15">
-    <input class="form-control mt-2" type="date" name="start_date">
-
-    <button class="btn btn-success mt-2">Create</button>
-</form>
-</div>
-
+<table>
+<tr><th>Name</th>
+	<th>Frequecy</th>
+	<th>Interval</th>
+	<th>Day of the Week</th>
+	<th>Day of the Month</th>
+	<th></th></tr>
 <% schedules.forEach(s => { %>
-<div class="card mb-2">
-<form method="POST" action="/schedules/update"
-	onsubmit="if(!this.name.value.trim()){alert('Name required');return false;}">
-   <input type="hidden" name="id" value="<%= s.id %>">
-   <input class="form-control mb-1" name="name" value="<%= s.name %>">
-
-    <button class="btn btn-primary btn-sm">Save</button>
-</form>
-</div>
+<tr>
+    <td><strong><%= s.name %></strong></td>
+	<td><%= s.frequency %></td>
+	<td><%= s.interval %></td>
+	<td><%= s.day_of_week %></td>
+	<td><%= s.day_of_month %></td>
+	<td>
+		<button class="btn btn-primary btn-sm" onclick="openEditScheduleModal(
+			<%= s.id %>, <%- JSON.stringify(s.name).replace(/"/g, "'") %>, '<%= s.frequency %>','<%= s.interval %>','<%= s.day_of_week %>','<%= s.day_of_month %>'
+		)">Edit</button>
+	</td>
+</tr>
 <% }) %>
+</table>
+
+
+<script>
+function openCreateScheduleModal() {
+    openModal(`
+        <h3>Create Schedule</h3>
+		
+		<div class="form-group">
+			<label>Name</label>
+			<input class="form-control mb-2" name="name" placeholder="Name">
+		</div>
+
+		<div class="form-group">
+			<div class="row">
+				<div class="col">
+					<div class="form-group">
+						<label>Frequency</label>
+						<select class="form-select" name="frequency">
+							<option>daily</option>
+							<option>weekly</option>
+							<option>monthly</option>
+						</select>
+					</div>
+				</div>
+				<div class="col">
+					<div class="form-group">
+						<label>Interval</label>
+						<input class="form-control" name="interval" placeholder="Interval">
+					</div>
+				</div>
+			</div>
+			
+			<div class="row">
+				<div class="col">
+					<div class="form-group">
+						<label>Day of week</label>
+						<input class="form-control" name="day_of_week" placeholder="mon,tue">
+					</div>
+				</div>
+				<div class="col">
+					<div class="form-group">
+						<label>Day of month</label>
+						<input class="form-control" name="day_of_month" placeholder="15">
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div class="form-group">
+			<label>Start Date</label>
+			<input class="form-control" type="date" name="start_date">
+		</div>
+
+        <div style="margin-top:10px;">
+            <button onclick="submitCreateSchedule()">Save</button>
+            <button onclick="closeModal()">Cancel</button>
+        </div>
+    `);
+
+    initSearchableSelects();
+}
+
+async function submitCreateSchedule() {
+    const modal = document.getElementById('globalModalContent');
+    const name = modal.querySelector('#name').value.trim();
+    const frequency = modal.querySelector('#frequency').value.trim();
+	const interval = modal.querySelector('#interval').value.trim();
+	const day_of_week = modal.querySelector('#day_of_week').value.trim();
+	const day_of_month = modal.querySelector('#day_of_month').value.trim();
+	const start_date = modal.querySelector('#start_date').value.trim();
+
+    if (!name.trim()) {
+        return alert('Name required');
+    }
+
+    await fetch(`/schedules/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: name,
+            frequency: frequency,
+            interval: interval, 
+			day_of_week: day_of_week,
+			day_of_month: day_of_month,
+			start_date: start_date
+        })
+    });
+
+    location.reload();
+}
+function openEditScheduleModal(id, name, frequency, interval, day_of_week, day_of_month) {
+    openModal(`
+        <h3>Edit Schedule</h3>
+
+        <div class="form-group">
+			<label>Name</label>
+			<input class="form-control mb-2" name="name" placeholder="Name">
+		</div>
+
+		<div class="form-group">
+			<div class="row">
+				<div class="col">
+					<div class="form-group">
+						<label>Frequency</label>
+						<select class="form-select" name="frequency">
+							<option>daily</option>
+							<option>weekly</option>
+							<option>monthly</option>
+						</select>
+					</div>
+				</div>
+				<div class="col">
+					<div class="form-group">
+						<label>Interval</label>
+						<input class="form-control" name="interval" placeholder="Interval">
+					</div>
+				</div>
+			</div>
+			
+			<div class="row">
+				<div class="col">
+					<div class="form-group">
+						<label>Day of week</label>
+						<input class="form-control" name="day_of_week" placeholder="mon,tue">
+					</div>
+				</div>
+				<div class="col">
+					<div class="form-group">
+						<label>Day of month</label>
+						<input class="form-control" name="day_of_month" placeholder="15">
+					</div>
+				</div>
+			</div>
+		</div>
+
+        <div style="margin-top:10px;">
+            <button onclick="submitEditSchedule(${id})">Save</button>
+            <button onclick="closeModal()">Cancel</button>
+        </div>
+    `);
+
+    initSearchableSelects();
+}
+async function submitEditSchedule(id) {
+    const modal = document.getElementById('globalModalContent');
+    const name = modal.querySelector('#name').value.trim();
+    const frequency = modal.querySelector('#frequency').value.trim();
+	const interval = modal.querySelector('#interval').value.trim();
+	const day_of_week = modal.querySelector('#day_of_week').value.trim();
+	const day_of_month = modal.querySelector('#day_of_month').value.trim();
+
+    if (!name.trim()) {
+        return alert('Name required');
+    }
+
+    await fetch(`/schedules/update`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+			id: id,
+            name: name,
+            frequency: frequency,
+            interval: interval, 
+			day_of_week: day_of_week,
+			day_of_month: day_of_month
+        })
+    });
+
+    location.reload();
+}
+
+</script>

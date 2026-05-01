@@ -5,21 +5,25 @@ const db = require('../db');
 router.get('/', async (req, res) => {
     const [assignments] = await db.query(`CALL get_all_assignments()`);
 	const [customers] = await db.query(`CALL get_customers()`);
-	const [templates] = await db.query(`CALL get_templates()`);
+	const [templates] = await db.query(`CALL get_task_templates()`);
 	const [schedules] = await db.query(`CALL get_schedules()`);
 	const [groups] = await db.query(`CALL get_groups()`);
 
 	res.render('assignments', {
-		assignments: assignments[0]
+		assignments: assignments[0],
+		customers: customers[0],
+		templates: templates[0],
+		schedules: schedules[0],
+		groups: groups[0]
 	});
 });
 
 router.post('/create', async (req, res) => {
     const { template_id, schedule_id, group_id, customer_ids } = req.body;
-
-    if (!template_id || !schedule_id) {
-        return res.status(400).send('Template and schedule are required');
-    }
+	const errors = requireFields(req.body, ['template_id','schedule_id']);
+	if (errors.length) {
+		return res.status(400).send(errors.join(', '));
+	}
 
     // normalize to array
     const customers = Array.isArray(customer_ids)

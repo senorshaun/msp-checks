@@ -1,14 +1,7 @@
 <h2>Templates</h2>
 
-<div class="card mb-3">
-    <form method="POST" action="/templates/create"
-        onsubmit="if(!this.name.value.trim()){alert('Name required');return false;}">
-		<div class="d-flex gap-2">
-			<input class="form-control" name="name" placeholder="New Template">
-            <button class="btn btn-success">+ Add</button>
-        </div>
-    </form>
-</div>
+<button onclick="openCreateTemplateModal()">Create Template</button>
+
 
 <div class="card">
     <% templates.forEach(t => { %>
@@ -19,3 +12,37 @@
         </div>
     <% }) %>
 </div>
+
+<script>
+function openCreateTemplateModal() {
+    openModal(`
+        <h3>Create Assignment</h3>
+		<div class="form-group">
+			<input class="form-control" name="name" placeholder="New Template">
+			<div style="margin-top:10px;">
+				<button onclick="submitCreateTemplate()">Create</button>
+				<button onclick="closeModal()">Cancel</button>
+			</div>
+		</div>
+    `);
+	initSearchableSelects();
+}
+
+async function submitCreateTemplate() {
+    const name = document.querySelector('[name="name"]').value;
+
+    if (!name.trim()) {
+        return alert('Name is required');
+    }
+
+    await fetch(`/templates/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            name: name
+        })
+    });
+
+    location.reload();
+}
+</script
