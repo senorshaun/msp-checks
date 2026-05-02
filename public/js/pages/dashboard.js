@@ -1,18 +1,51 @@
-/*----------- App State ------------*/
-const appState = {
-    tasks: window.__DATA__.tasks || [],
-    customers: window.__DATA__.customers || [],
-    filters: {
-        customers: [],
-        statuses: []
-    },
-    ui: {
-        sidebarOpen: false,
-        legendOpen: false,
-        currentWeekStart: null
-    }
-};
+document.addEventListener('DOMContentLoaded', initPage);
+let data;
+let appState;
+let statusConfig;
+function initPage() {
+    data = window.__DATA__;
+	appState = {
+		tasks: data.tasks || [],
+		customers: data.customers || [],
+		filters: {
+			customers: [],
+			statuses: []
+		},
+		ui: {
+			sidebarOpen: false,
+			legendOpen: false,
+			currentWeekStart: null
+		}
+	};
+	statusConfig = {
+		complete: { 
+			label: 'Complete', 
+			color: '#9ca3af',
+			className: 'task-complete',
+			order: 1
+		},
+		blocked: { 
+			label: 'Blocked', 
+			color: '#ef4444',
+			order: 2
+		},
+		in_progress: { 
+			label: 'In Progress', 
+			color: '#f59e0b',
+			order: 3
+		},
+		pending: { 
+			label: 'Pending', 
+			color: '#000000',
+			order: 4
+		}
+	};
+	loadState();
+	render();
+	let currentTaskId = null;
+}
 
+/*----------- App State -------------*/
 function loadState() {
     const savedCustomers = localStorage.getItem('customerFilter');
     const savedStatuses = localStorage.getItem('statusFilter');
@@ -55,6 +88,9 @@ function renderUIState() {
     } else {
         closeSidebar();
     }
+	document.addEventListener('keydown', (e) => {
+		if (e.key === 'Escape') toggleSidebar(false);
+	});
 }
 
 /*----------- Filter Sidebar ------------*/
@@ -76,10 +112,6 @@ function closeSidebar() {
     document.getElementById('filterOverlay').classList.remove('active');
 }
 
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') toggleSidebar(false);
-});
-
 /* ---------------- View Toggle ---------------- */
 function toggleView(view) {
     document.getElementById('boardView').style.display =
@@ -89,30 +121,6 @@ function toggleView(view) {
 }
 
 /*----------- Status Filter ------------*/
-const statusConfig = {
-    complete: { 
-        label: 'Complete', 
-        color: '#9ca3af',
-        className: 'task-complete',
-		order: 1
-    },
-    blocked: { 
-        label: 'Blocked', 
-        color: '#ef4444',
-		order: 2
-    },
-    in_progress: { 
-        label: 'In Progress', 
-        color: '#f59e0b',
-		order: 3
-    },
-    pending: { 
-        label: 'Pending', 
-        color: '#000000',
-		order: 4
-    }
-};
-
 function renderStatusLegend() {
     const container = document.getElementById('statusLegend');
 	container.innerHTML = Object.entries(statusConfig).map(([key, cfg]) => `
@@ -126,17 +134,16 @@ function renderStatusLegend() {
 			${cfg.label}
 		</label>
 	`).join('');
-}
-
-document.getElementById('statusLegend')
-    .addEventListener('change', () => {
-        const container = document.getElementById('statusLegend');
-        setState(state => {
-			state.filters.statuses = Array.from(
-				document.querySelectorAll('#statusLegend input:checked')
-			).map(i => i.value);
+	document.getElementById('statusLegend')
+		.addEventListener('change', () => {
+			const container = document.getElementById('statusLegend');
+			setState(state => {
+				state.filters.statuses = Array.from(
+					document.querySelectorAll('#statusLegend input:checked')
+				).map(i => i.value);
+			});
 		});
-    });
+}
 
 /*----------- Customer Filter ------------*/
 function renderCustomerFilter() {
@@ -427,7 +434,3 @@ function formatTaskTitle(t) {
     });
     return `${time} - ${t.name}`;
 }
-
-loadState();
-render();
-let currentTaskId = null;

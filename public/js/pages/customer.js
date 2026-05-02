@@ -1,54 +1,99 @@
-const templates = window.__DATA__.templates || [];
-const schedules = window.__DATA__.schedules || [];
-const groups = window.__DATA__.groups || [];
-const customers = window.__DATA__.customers || [];
-const customerId = window.__DATA__.customerId;
-document.addEventListener('DOMContentLoaded', init());
+document.addEventListener('DOMContentLoaded', initPage);
 
-function init() {
-	initSearchableSelects();
-    bindSearchableSelects({
-        selector: '.group-select',
-        getInitialValue: (el) => el.dataset.currentGroup,
-        onChange: (value, el) => {
-            updateGroup(el.dataset.assignmentId, value);
-        }
-    });
-	renderCustomerSwitcher();
+function initPage() {
+    const data = window.__DATA__;
+    initCustomerSwitcher(data);
+    initGroupSelects(data);
+    initAssignmentActions(data);
 }
 
-function updateGroup(id,group){
-	api_post('/customers/update-group',{
-		assignment_id:id,
-		group_id:group
-	});
-}
-
-function renderCustomerSwitcher() {
+function initCustomerSwitcher(data) {
     const container = document.getElementById('customerSwitcherContainer');
-	if (!container) return;
+
     container.innerHTML = buildSearchableSelect({
         name: 'customerSwitcher',
-        data: customers,
-        placeholder: 'Jump to Customer...'
+        data: data.customers,
+        placeholder: 'Switch customer...'
     });
-    const wrapper = container.querySelector('[data-name="customerSwitcher"]');
-    let isInitialized = false;
-	wrapper.addEventListener('change', () => {
-		if (!isInitialized) return;
-		const selected = wrapper.getValues();
-		if (!selected || !selected.length) return;
-		const id = selected[0];
-		if (String(id) !== String(customerId)) {
-			window.location.href = `/customers/${id}`;
-		}
-	});
-	setTimeout(() => {
-		isInitialized = true;
-	}, 0);
+
+    const wrapper = container.querySelector('.searchable-select');
+    initSearchableSelect(wrapper);
+    wrapper.setValue(data.customer.id);
+    wrapper.addEventListener('change', (e) => {
+        const id = e.detail.value;
+        if (id) {
+            window.location.href = `/customers/${id}`;
+        }
+    });
 }
 
-function openAssignModal() {
+function initGroupSelects(data) {
+    document.querySelectorAll('.group-select').forEach(el => {
+
+        const assignmentId = el.dataset.assignmentId;
+        const currentGroup = el.dataset.currentGroup;
+        el.innerHTML = buildSearchableSelect({
+            name: `group_${assignmentId}`,
+            data: data.groups,
+            placeholder: 'Select group...'
+        });
+        const wrapper = el.querySelector('.searchable-select');
+        initSearchableSelect(wrapper);
+        if (currentGroup) {
+            wrapper.setValue(currentGroup);
+        }
+        wrapper.addEventListener('change', async (e) => {
+            const groupId = e.detail.value;
+            await updateAssignmentGroup(assignmentId, groupId);
+            updateGroupLabel(el, groupId, data.groups);
+        });
+    });
+}
+
+async function updateAssignmentGroup(assignmentId, groupId) {
+    await api_post(`/assignments/${assignmentId}/group`, {
+        group_id: groupId
+    });
+}
+
+function updateGroupLabel(container, groupId, groups) {
+    const card = container.closest('.assignment-card');
+    if (!card) return;
+
+    const label = card.querySelector('.group-name');
+    if (!label) return;
+
+    const selected = groups.find(g => g.id == groupId);
+    label.textContent = selected ? selected.name : 'Unassigned';
+}
+
+function initAssignmentActions(data) {
+    const addBtn = document.getElementById('addAssignmentBtn');
+    if (addBtn) {
+        addBtn.addEventListener('click', () => openAssignModal(data));
+    }
+	const copyBtn = document.getElementById('copyAssignmentBtn');
+    if (copyBtn) {
+        copyBtn.addEventListener('click', () => openCopyModal(data));
+    }
+    document.querySelectorAll('.delete-assignment').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const id = btn.dataset.id;
+            if (!confirm('Remove this assignment?')) return;
+            await fetch(`/assignments/${id}`, {
+                method: 'DELETE'
+            });
+            removeAssignmentFromUI(id);
+        });
+    });
+}
+
+function removeAssignmentFromUI(id) {
+    const el = document.querySelector(`.assignment-card[data-id="${id}"]`);
+    if (el) el.remove();
+}
+
+function openAssignModal(data) {
     openFormModal({
         title: 'Add Assignment',
         fields: [
@@ -56,19 +101,19 @@ function openAssignModal() {
                 type: 'select',
                 name: 'template_id',
                 label: 'Template',
-                options: templates
+                options: data.templates
             },
             {
                 type: 'select',
                 name: 'schedule_id',
                 label: 'Schedule',
-                options: schedules
+                options: data.schedules
             },
             {
                 type: 'select',
                 name: 'group_id',
                 label: 'Group',
-                options: groups
+                options: data.groups
             }
         ],
         onSubmit: async (values) => {
@@ -82,7 +127,7 @@ function openAssignModal() {
     });
 }
 
-function openCopyModal() {
+function openCopyModal(data) {
     openFormModal({
         title: 'Copy Assignments',
         fields: [
@@ -90,7 +135,7 @@ function openCopyModal() {
                 type: 'select',
                 name: 'source_customer_id',
                 label: 'Source Customer',
-                options: customers
+                options: data.customers
             },
             {
                 type: 'button',

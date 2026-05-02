@@ -56,9 +56,11 @@
 </div>
 
 <script>
-    window.__DATA__ = {
-        customers: <%- JSON.stringify(customers) %>,
-        tasks: <%- JSON.stringify(tasks) %>
-    };
+    window.__DATA__ = <%- JSON.stringify({
+		customers,
+        tasks
+	}) %>;
 </script>
+<% scripts = `
 <script src="/js/pages/dashboard.js"></script>
+` %>

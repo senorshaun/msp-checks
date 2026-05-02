@@ -9,9 +9,6 @@
 </head>
 
 <body>
-<script src="/js/app.js"></script>
-<script src="/js/components/searchable-select.js"></script>
-<script src="/js/components/form-utils.js"></script>
 <div class="sidebar">
     <h2>MSP Ops</h2>
 
@@ -28,6 +25,15 @@
 <div id="globalModal" class="overlay-modal hidden">
     <div class="modal-content" id="globalModalContent"></div>
 </div>
+<script src="/js/app.js"></script>
+<script src="/js/components/searchable-select.js"></script>
+<script src="/js/components/form-utils.js"></script>
+<!-- GLOBAL SCRIPTS -->
+<script src="/js/app.js"></script>
+<script src="/js/components/searchable-select.js"></script>
+<script src="/js/components/form-utils.js"></script>
 
+<!-- PAGE SCRIPTS -->
+<%- scripts || '' %>
 </body>
 </html>

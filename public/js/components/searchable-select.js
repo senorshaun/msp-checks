@@ -1,29 +1,6 @@
-function initSearchableSelects() {
-    document.querySelectorAll('.searchable-select').forEach(initSearchable);
-}
-
-function bindSearchableSelects({
-    selector,
-    getInitialValue,
-    onChange
-}) {
-    document.querySelectorAll(selector).forEach(wrapper => {
-        const select = wrapper.querySelector('[data-name]');
-        if (!select) return;
-        if (getInitialValue && select.setValues) {
-            const value = getInitialValue(wrapper);
-            if (value !== undefined && value !== null) {
-                select.setValues([String(value)]);
-            }
-        }
-        select.addEventListener('change', () => {
-            const value = select.getValues?.()[0];
-            if (!value) return;
-            onChange?.(value, wrapper);
-        });
-    });
-}
-
+/* =========================================
+   HTML BUILDER (unchanged conceptually)
+========================================= */
 function buildSearchableSelect({
     name,
     data,
@@ -33,9 +10,9 @@ function buildSearchableSelect({
     multiple = false
 }) {
     const itemsHtml = data.map(item => `
-		<div class="search-item" data-value="${item[valueField]}">
-			${item[labelField]}
-		</div>
+        <div class="search-item" data-value="${item[valueField]}">
+            ${item[labelField]}
+        </div>
     `).join('');
 
     return `
@@ -47,17 +24,21 @@ function buildSearchableSelect({
                 : `<input type="hidden" name="${name}">`
             }
 
-            <div class="search-list">
+            <div class="search-list" style="display:none;">
                 ${itemsHtml}
             </div>
         </div>
     `;
 }
 
+
+/* =========================================
+   INITIALIZER
+========================================= */
 (function () {
 
-    function initSearchableSelect(wrapper) {
-        if (wrapper.__initialized) return;
+    window.initSearchableSelect = function (wrapper) {
+        if (!wrapper || wrapper.__initialized) return;
         wrapper.__initialized = true;
 
         const input = wrapper.querySelector('.search-input');
@@ -85,6 +66,9 @@ function buildSearchableSelect({
             highlightedIndex = -1;
             updateHighlight();
         }
+
+        // expose for global handler
+        wrapper.closeList = closeList;
 
         function updateHighlight() {
             const items = getItems();
@@ -128,12 +112,12 @@ function buildSearchableSelect({
             remove.type = 'button';
             remove.innerText = '×';
 
-            remove.onclick = () => {
+            remove.addEventListener('click', () => {
                 selectedValues = selectedValues.filter(v => v !== value);
                 tag.remove();
                 updateMultiDisplay();
                 emitChange();
-            };
+            });
 
             tag.appendChild(remove);
             multiContainer.appendChild(tag);
@@ -168,9 +152,6 @@ function buildSearchableSelect({
         input.addEventListener('focus', openList);
 
         input.addEventListener('input', () => {
-            if (!isMulti) {
-                if (hidden) hidden.value = '';
-            }
             filterList();
             openList();
         });
@@ -206,7 +187,6 @@ function buildSearchableSelect({
             }
 
             if (isMulti && e.key === 'Backspace' && !input.value) {
-                // remove last tag
                 const last = multiContainer.lastElementChild;
                 if (last) {
                     const val = last.dataset.value;
@@ -240,12 +220,6 @@ function buildSearchableSelect({
             }
         });
 
-        document.addEventListener('click', (e) => {
-            if (!wrapper.contains(e.target)) {
-                closeList();
-            }
-        });
-
         /* ---------------- PUBLIC API ---------------- */
 
         wrapper.getValue = () => hidden?.value || null;
@@ -264,13 +238,26 @@ function buildSearchableSelect({
                 if (item) addMulti(v, item.textContent.trim());
             });
         };
-    }
+    };
+
 
     /* ---------------- INIT ALL ---------------- */
 
     window.initSearchableSelects = function () {
         document.querySelectorAll('.searchable-select')
-            .forEach(initSearchableSelect);
+            .forEach(window.initSearchableSelect);
     };
 
 })();
+
+if (!window.__SEARCH_SELECT_GLOBAL__) {
+    document.addEventListener('click', (e) => {
+        document.querySelectorAll('.searchable-select').forEach(wrapper => {
+            if (!wrapper.contains(e.target)) {
+                wrapper.closeList?.();
+            }
+        });
+    });
+
+    window.__SEARCH_SELECT_GLOBAL__ = true;
+}

@@ -1,48 +1,54 @@
-<h2><%=customer.name%></h2>
+<h2 class="mb-0">Customer</h2>
 
-<div class="form-group mb-3">
-    <label>Select Customer</label>
-    <div id="customerSwitcherContainer"></div>
+<div class="d-flex gap-2">
+	<div id="customerSwitcherContainer"></div>
+	<button class="btn btn-primary" id="addAssignmentBtn">Add Assignment</button>
+	<button class="btn btn-secondary" id="copyAssignmentBtn">Copy From</button>
 </div>
 
-<div class="d-flex gap-2 mb-3">
-    <button class="btn btn-primary" onclick="openAssignModal()">Add Assignment</button>
-    <button class="btn btn-secondary" onclick="openCopyModal()">Copy From</button>
-</div>
+<div id="assignmentList" class="d-flex flex-column gap-3">
+    <% assignments.forEach(a => { %>
+        <div class="card msp-card assignment-card" data-id="<%= a.id %>">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="card-title fw-semibold">
+                        <%= a.template_name %>
+                    </div>
+                    <div class="text-muted small">
+                        Group:
+                        <span class="group-name">
+                            <%= a.group_name || 'Unassigned' %>
+                        </span>
+                    </div>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <div 
+                        class="group-select"
+                        data-assignment-id="<%= a.id %>"
+                        data-current-group="<%= a.group_id %>">
+                    </div>
+                    <button 
+                        class="btn btn-outline-danger btn-sm delete-assignment"
+                        data-id="<%= a.id %>">
+                        Remove
+                    </button>
+                </div>
 
-<hr>
-
-<% assignments.forEach(a => { %>
-<div class="card mb-2">
-    <div class="card-row">
-        <div class="card-content">
-            <div class="card-title"><%= a.template_name %></div>
-            <div class="card-subtitle"><%= a.schedule_name %></div>
-        </div>
-
-        <div class="card-actions">
-            <div 
-                class="group-select" 
-                data-assignment-id="<%= a.id %>">
-				data-current-group="<%= a.group_id %>"
-                <%- buildSearchableSelect({
-                    name: `group_${a.id}`,
-                    data: groups,
-                    placeholder: 'Select Group'
-                }) %>
             </div>
         </div>
-    </div>
+    <% }) %>
 </div>
-<% }) %>
 
 <script>
-    window.__DATA__ = {
-		customerId: <%= customer.id %>,
-		templates: <%- JSON.stringify(templates) %>,
-		schedules: <%- JSON.stringify(schedules) %>,
-		groups: <%- JSON.stringify(groups) %>,
-		customers: <%- JSON.stringify(customers) %>
-	};
+    window.__DATA__ = <%- JSON.stringify({
+        customer,
+        assignments,
+        groups,
+        customers,
+		templates,
+		schedules
+    }) %>;
 </script>
+<% scripts = `
 <script src="/js/pages/customer.js"></script>
+` %>

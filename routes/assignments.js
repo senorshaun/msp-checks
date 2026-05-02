@@ -45,4 +45,24 @@ router.post('/create', async (req, res) => {
 	}
 });
 
+router.post('/:id', async (req, res) => {
+    const { schedule_id, group_id } = req.body;
+
+	await db.query(`CALL update_assignment(?, ?, ?, ?)`, [
+		req.params.id,
+		schedule_id || null,
+		group_id || null,
+		1
+	]);
+    res.sendStatus(200);
+});
+
+router.delete('/:id', async (req, res) => {
+	await db.query(`CALL delete_assignment(?, ?)`, [
+		req.params.id,
+		1
+	]);
+    res.sendStatus(200);
+});
+
 module.exports = router;
