@@ -18,7 +18,6 @@ router.get('/:id', async (req, res) => {
         'CALL get_customer(?)',
         [req.params.id]
     );
-    const [allCustomers] = await db.query('CALL get_customers()');
 	const [assignments] = await db.query(`CALL get_customer_assignments(?)`, [req.params.id]);
 	const [templates] = await db.query(`CALL get_task_templates()`);
 	const [groups] = await db.query(`CALL get_groups()`);
@@ -27,7 +26,6 @@ router.get('/:id', async (req, res) => {
 
 	res.render('customer', {
 		customer: customerRows[0][0],
-        customers: allCustomers[0],
 		assignments: assignments[0],
 		templates: templates[0],
 		groups: groups[0],

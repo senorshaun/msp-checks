@@ -1,50 +1,4 @@
 /* ---------------- MODAL CONTROL ---------------- */
-window.openModal = function (html) {
-    const modal = document.getElementById('globalModal');
-    const content = document.getElementById('globalModalContent');
-
-    content.innerHTML = html;
-    modal.classList.remove('hidden');
-};
-
-window.closeModal = function () {
-    document.getElementById('globalModal').classList.add('hidden');
-};
-
-function initSearchableSelects() {
-    document.querySelectorAll('.searchable-select').forEach(initSearchable);
-}
-
-function buildSearchableSelect({
-    name,
-    data,
-    placeholder = 'Select...',
-    valueField = 'id',
-    labelField = 'name',
-    multiple = false
-}) {
-    const itemsHtml = data.map(item => `
-		<div class="search-item" data-value="${item[valueField]}">
-			${item[labelField]}
-		</div>
-    `).join('');
-
-    return `
-        <div class="searchable-select ${multiple ? 'multi' : ''}" data-name="${name}">
-            <input type="text" class="search-input" placeholder="${placeholder}">
-            ${
-                multiple
-                ? `<div class="multi-values"></div>`
-                : `<input type="hidden" name="${name}">`
-            }
-
-            <div class="search-list">
-                ${itemsHtml}
-            </div>
-        </div>
-    `;
-}
-
 window.updateInlineField = async function ({
     id,
     btn,
@@ -74,14 +28,10 @@ window.updateInlineField = async function ({
     }
 
     try {
-        const res = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
+        const res = await api_post(endpoint, {
                 id,
                 [fieldName]: value
-            })
-        });
+            });
 
         if (!res.ok) throw new Error();
 
@@ -107,4 +57,30 @@ function debounce(fn, delay = 500) {
         clearTimeout(timer);
         timer = setTimeout(() => fn(...args), delay);
     };
+}
+
+async function api_post(url, data) {
+    const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    });
+
+    if (!res.ok) throw new Error('API POST error');
+    return res.json();
+}
+
+async function api_get(url) {
+    const res = await fetch(url, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+    });
+
+    if (!res.ok) throw new Error('API GET error');
+    return res.json();
+}
+
+function getNameValue(name) {
+    const wrapper = document.querySelector(`[name="${name}"]`);
+    return wrapper?.getValues?.()[0];
 }

@@ -1,3 +1,59 @@
+function initSearchableSelects() {
+    document.querySelectorAll('.searchable-select').forEach(initSearchable);
+}
+
+function bindSearchableSelects({
+    selector,
+    getInitialValue,
+    onChange
+}) {
+    document.querySelectorAll(selector).forEach(wrapper => {
+        const select = wrapper.querySelector('[data-name]');
+        if (!select) return;
+        if (getInitialValue && select.setValues) {
+            const value = getInitialValue(wrapper);
+            if (value !== undefined && value !== null) {
+                select.setValues([String(value)]);
+            }
+        }
+        select.addEventListener('change', () => {
+            const value = select.getValues?.()[0];
+            if (!value) return;
+            onChange?.(value, wrapper);
+        });
+    });
+}
+
+function buildSearchableSelect({
+    name,
+    data,
+    placeholder = 'Select...',
+    valueField = 'id',
+    labelField = 'name',
+    multiple = false
+}) {
+    const itemsHtml = data.map(item => `
+		<div class="search-item" data-value="${item[valueField]}">
+			${item[labelField]}
+		</div>
+    `).join('');
+
+    return `
+        <div class="searchable-select ${multiple ? 'multi' : ''}" data-name="${name}">
+            <input type="text" class="search-input" placeholder="${placeholder}">
+            ${
+                multiple
+                ? `<div class="multi-values"></div>`
+                : `<input type="hidden" name="${name}">`
+            }
+
+            <div class="search-list">
+                ${itemsHtml}
+            </div>
+        </div>
+    `;
+}
+
 (function () {
 
     function initSearchableSelect(wrapper) {
