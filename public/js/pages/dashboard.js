@@ -6,7 +6,7 @@ function initPage() {
     data = window.__DATA__;
 	appState = {
 		tasks: data.tasks || [],
-		customers: data.customers || [],
+		customers: flattenData(data.customers, 'customers') || [],
 		filters: {
 			customers: [],
 			statuses: []

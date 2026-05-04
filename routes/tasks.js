@@ -5,10 +5,11 @@ const db = require('../db');
 router.get('/', async (req, res) => {
     const [tasks] = await db.query(`CALL get_tasks()`);
 	const [customers] = await db.query(`CALL get_customers()`);
+	const customerArray = req.helpers.buildCustomerResponse(customers[0]);
 
 	res.render('dashboard', {
 		tasks: tasks[0],
-		customers: customers[0]
+		customers: customerArray
 	});
 });
 

@@ -12,7 +12,7 @@ function initCustomerSwitcher() {
 
     container.innerHTML = buildSearchableSelect({
         name: 'customerSwitcher',
-        data: data.customers,
+        data: flattenData(data.customers, 'customers'),
         placeholder: 'Switch customer...'
     });
 
@@ -135,7 +135,7 @@ function openCopyModal() {
                 type: 'select',
                 name: 'source_customer_id',
                 label: 'Source Customer',
-                options: data.customers
+                options: flattenData(data.customers, 'customers')
             },
             {
                 type: 'button',

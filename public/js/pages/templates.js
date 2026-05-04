@@ -55,7 +55,7 @@ function renderTemplateEditor(template, steps) {
 
         <div class="d-flex justify-content-between mb-2">
             <div class="d-flex gap-2">
-                <button class="btn btn-success btn-sm" id="saveOrderBtn">Save Order</button>
+                <button class="btn btn-primary btn-sm" id="saveOrderBtn">Save Order</button>
                 <button class="btn btn-primary btn-sm" id="addStepBtn">Add Step</button>
             </div>
         </div>

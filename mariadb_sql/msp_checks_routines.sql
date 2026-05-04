@@ -700,7 +700,7 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`shaun`@`%` PROCEDURE `get_customers`()
 BEGIN
-    SELECT * FROM customers ORDER BY name;
+    SELECT c.*, sl.name AS `service_level_name`, sl.priority as `service_level_priority` FROM customers c LEFT JOIN customer_service_levels sl on c.service_level = sl.id ORDER BY sl.priority, c.name;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;

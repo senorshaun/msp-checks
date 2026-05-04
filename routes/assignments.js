@@ -8,10 +8,11 @@ router.get('/', async (req, res) => {
 	const [templates] = await db.query(`CALL get_templates()`);
 	const [schedules] = await db.query(`CALL get_schedules()`);
 	const [groups] = await db.query(`CALL get_groups()`);
+	const customerArray = req.helpers.buildCustomerResponse(customers[0]);
 
 	res.render('assignments', {
 		assignments: assignments[0],
-		customers: customers[0],
+		customers: customerArray,
 		templates: templates[0],
 		schedules: schedules[0],
 		groups: groups[0]

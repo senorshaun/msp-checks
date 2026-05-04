@@ -7,7 +7,7 @@ function initPage() {
         templates: [],
         schedules: []
     };
-
+	customers = flattenCustomers(customers);
     initAssignmentActions();
 }
 
@@ -32,7 +32,7 @@ function getAssignmentFormFields(data) {
             label: 'Customer',
             type: 'select',
             required: true,
-            options: data.customers.map(c => ({
+            options: flattenData(data.customers, 'customers').map(c => ({
                 label: c.name,
                 value: c.id
             }))
@@ -109,26 +109,4 @@ function deleteAssignment(assignment) {
             location.reload();
         }
     });
-}
-
-async function submitAddAssignment() {
-	const modal = document.getElementbyID('globalModalContent');
-    const template = modal.querySelector('[name="template_id"]').value;
-    const schedule = modal.querySelector('[name="schedule_id"]').value;
-    const group = modal.querySelector('[name="group_id"]').value;
-	const wrapper = modal.querySelector('[data-name="customer_ids"]');
-	const customers = wrapper.getValues();
-
-    if (!template || !schedule || !group || !customers) {
-        return alert('Template, schedule, group and customer required');
-    }
-
-    await api_fetch('POST', `/assignments/create`, {
-            template_id: template,
-            schedule_id: schedule,
-            group_id: group, 
-			customer_ids: customers
-    });
-
-    location.reload();
 }

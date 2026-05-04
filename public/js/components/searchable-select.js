@@ -9,11 +9,30 @@ function buildSearchableSelect({
     labelField = 'name',
     multiple = false
 }) {
-    const itemsHtml = data.map(item => `
-        <div class="search-item" data-value="${item[valueField]}">
-            ${item[labelField]}
-        </div>
-    `).join('');
+	const groups = {};
+
+	data.forEach(item => {
+		const group = item.group || 'Other';
+		if (!groups[group]) groups[group] = [];
+		groups[group].push(item);
+	});
+
+
+
+	const itemsHtml = Object.entries(groups).map(([groupName, items]) => `
+		<div class="search-group">
+			<div class="search-group-label">${groupName}</div>
+			${items.map(item => `
+				<div 
+					class="search-item" 
+					data-value="${item[valueField]}"
+					data-group="${groupName}"
+				>
+					${item[labelField]}
+				</div>
+			`).join('')}
+		</div>
+	`).join('');
 
     return `
         <div class="searchable-select ${multiple ? 'multi' : ''}" data-name="${name}">
@@ -31,6 +50,16 @@ function buildSearchableSelect({
     `;
 }
 
+function flattenData(data, level1Name) {
+	return data.flatMap(level1 =>
+		level1[level1Name].map(level2 => ({
+			id: level2.id,
+			name: level2.name,
+			group: level1.name,
+			priority: level1.priority
+		}))
+	);
+}
 
 /* =========================================
    INITIALIZER
@@ -134,18 +163,26 @@ function buildSearchableSelect({
         }
 
         function filterList() {
-            const val = input.value.toLowerCase();
+			const val = input.value.toLowerCase();
+			const groups = list.querySelectorAll('.search-group');
+			groups.forEach(group => {
+				const label = group.querySelector('.search-group-label');
+				const items = group.querySelectorAll('.search-item');
+				let groupHasVisible = false;
+				items.forEach(item => {
+					const matches =
+						item.textContent.toLowerCase().includes(val) ||
+						item.dataset.group.toLowerCase().includes(val);
 
-            getItems().forEach(item => {
-                item.style.display =
-                    item.textContent.toLowerCase().includes(val)
-                        ? 'block'
-                        : 'none';
-            });
+					item.style.display = matches ? 'block' : 'none';
 
-            highlightedIndex = -1;
-            updateHighlight();
-        }
+					if (matches) groupHasVisible = true;
+				});
+				group.style.display = groupHasVisible ? 'block' : 'none';
+			});
+			highlightedIndex = -1;
+			updateHighlight();
+		}
 
         /* ---------------- EVENTS ---------------- */
 
@@ -249,6 +286,17 @@ function buildSearchableSelect({
     };
 
 })();
+
+function flattenCustomers(serviceLevels) {
+  return serviceLevels.flatMap(level =>
+    level.customers.map(customer => ({
+      id: customer.id,
+      name: customer.name,
+      serviceLevel: level.name,
+      priority: level.priority
+    }))
+  );
+}
 
 if (!window.__SEARCH_SELECT_GLOBAL__) {
     document.addEventListener('click', (e) => {

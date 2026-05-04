@@ -27,6 +27,7 @@ DROP TABLE IF EXISTS `customers`;
 CREATE TABLE `customers` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
+  `service_level` int(11) DEFAULT 1,
   `is_active` tinyint(1) DEFAULT 1,
   `modified_at` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)

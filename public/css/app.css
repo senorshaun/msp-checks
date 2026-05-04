@@ -177,18 +177,8 @@ body.sidebar-open {
     align-items: center;
 }
 
-.card-content {
-    display: flex;
-    flex-direction: column;
-}
-
 .card-title {
     font-weight: 600;
-}
-
-.card-subtitle {
-    font-size: 12px;
-    color: #6b7280;
 }
 
 .card-actions {
@@ -219,15 +209,7 @@ td, th {
     border-bottom: 1px solid #e5e7eb;
 }
 
-/* Status pills */
-.pill {
-    padding: 4px 10px;
-    border-radius: 999px;
-    font-size: 12px;
-}
-
 /* Modals */
-
 .overlay-modal {
     position: fixed;
     top:0; left:0;
@@ -256,13 +238,6 @@ td, th {
     overflow:auto;
 }
 
-.overlay-modal .modal-group {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
-}
-
 .d-flex {
     display: flex;
 }
@@ -285,6 +260,25 @@ td, th {
     width: 250px;
 }
 
+.search-group {
+  padding: 4px 0;
+  position: relative;
+}
+
+.search-group-label {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 10px;
+  opacity: 1;
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  background: #fff;
+  border-bottom: 1px solid #eee;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.05);
+
+}
+
 .search-input {
     width: 100%;
     padding: 6px;
@@ -299,15 +293,22 @@ td, th {
     overflow-y: auto;
     display: none;
     z-index: 1000;
+	background: #fff;
+	border: 1px solid #ddd;
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0,0,0,0.1);
 }
 
 .search-item {
     padding: 6px;
     cursor: pointer;
+	position: relative;
+	z-index: 2;
 }
 
-.search-item:hover {
-    background: #eee;
+.search-item:hover,
+.search-item.highlighted {
+  background: #f0f0f0;
 }
 
 .multi-values {
@@ -315,10 +316,6 @@ td, th {
     flex-wrap: wrap;
     gap: 4px;
     margin-bottom: 4px;
-}
-
-.search-item.highlighted {
-    background: #e5e7eb;
 }
 
 .multi-tag {
@@ -338,29 +335,10 @@ td, th {
     cursor: pointer;
 }
 
-.dragging {
-    opacity: 0.5;
-}
-
 .checkbox-list {
     display: flex;
     flex-direction: column;
     gap: 6px;
-}
-
-/* Calendar events */
-.fc-event.task-complete {
-    text-decoration: line-through;
-    opacity: 0.7;
-}
-.fc-daygrid-event {
-    white-space: normal;
-    line-height: 1.2;
-	margin-bottom: 2px;
-}
-
-.fc-daygrid-event + .fc-daygrid-event {
-    border-top: 1px solid #eee;
 }
 
 /* List cards */
