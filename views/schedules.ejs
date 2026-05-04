@@ -1,28 +1,46 @@
-<h2>Schedules</h2>
+<h2 class="mb-0">Schedules</h2>
 
-<button onclick="openCreateScheduleModal()">Create Schedule</button>
+<div class="d-flex gap-2">
+    <button class="btn btn-primary" id="createScheduleBtn">Create Schedule</button>
+</div>
 
-<table>
-<tr><th>Name</th>
-	<th>Frequecy</th>
-	<th>Interval</th>
-	<th>Day of the Week</th>
-	<th>Day of the Month</th>
-	<th></th></tr>
-<% schedules.forEach(s => { %>
-<tr>
-    <td><strong><%= s.name %></strong></td>
-	<td><%= s.frequency %></td>
-	<td><%= s.interval %></td>
-	<td><%= s.day_of_week %></td>
-	<td><%= s.day_of_month %></td>
-	<td>
-		<button class="btn btn-primary btn-sm" onclick="openEditScheduleModal(
-			<%= s.id %>, <%- JSON.stringify(s.name).replace(/"/g, "'") %>, '<%= s.frequency %>','<%= s.interval %>','<%= s.day_of_week %>','<%= s.day_of_month %>'
-		)">Edit</button>
-	</td>
-</tr>
-<% }) %>
-</table>
+<div id="scheduleList" class="d-flex flex-column gap-3">
+	<% if (!schedules || schedules.length === 0) { %>
+        <div class="text-muted">No schedules found.</div>
+    <% } %>
+    <% schedules.forEach(s => { %>
+        <div class="card msp-card schedule-card" data-id="<%= s.id %>">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="card-title fw-semibold">
+                        <%= s.name %>
+                    </div>
+                    <div class="text-muted small">
+                        <div>Frequency: <%= s.frequency %></div>
+                        <div>Interval: <%= s.interval %></div>
+                        <% if (s.frequency === 'weekly') { %>
+							<div>Day (Week): <%= s.day_of_week %></div>
+						<% } %>
+						<% if (s.frequency === 'monthly') { %>
+							<div>Day (Month): <%= s.day_of_month %></div>
+						<% } %>
+                    </div>
+                </div>
 
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary btn-sm edit-schedule-btn">Edit</button>
+					<button class="btn btn-outline-danger btn-sm delete-schedule-btn">Delete</button>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+</div>
+
+<script>
+    window.__DATA__ = <%- JSON.stringify({
+		schedules
+	}) %>;
+</script>
+<% scripts = `
 <script src="/js/pages/schedules.js"></script>
+` %>

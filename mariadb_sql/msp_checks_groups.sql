@@ -27,6 +27,8 @@ DROP TABLE IF EXISTS `groups`;
 CREATE TABLE `groups` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(150) NOT NULL,
+  `is_active` tinyint(1) DEFAULT 1,
+  `modified_by` int(11) DEFAULT NULL,
   `modified_at` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `name` (`name`)

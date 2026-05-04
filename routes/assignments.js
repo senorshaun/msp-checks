@@ -5,7 +5,7 @@ const db = require('../db');
 router.get('/', async (req, res) => {
     const [assignments] = await db.query(`CALL get_all_assignments()`);
 	const [customers] = await db.query(`CALL get_customers()`);
-	const [templates] = await db.query(`CALL get_task_templates()`);
+	const [templates] = await db.query(`CALL get_templates()`);
 	const [schedules] = await db.query(`CALL get_schedules()`);
 	const [groups] = await db.query(`CALL get_groups()`);
 
@@ -18,11 +18,11 @@ router.get('/', async (req, res) => {
 	});
 });
 
-router.post('/create', async (req, res) => {
+router.post('/', async (req, res) => {
     const { template_id, schedule_id, group_id, customer_ids } = req.body;
-	const errors = requireFields(req.body, ['template_id','schedule_id']);
+	const errors = req.helpers.requireFields(req.body, ['template_id','schedule_id']);
 	if (errors.length) {
-		return res.status(400).send(errors.join(', '));
+		return res.status(400).json({success: false, error: errors.join(', ')});
 	}
 
     // normalize to array
@@ -31,21 +31,22 @@ router.post('/create', async (req, res) => {
         : [customer_ids];
 
     for (const customerId of customers) {
-        await db.query(`CALL assign_template(?, ?, ?, ?)`, [
+        await db.query(`CALL assign_template(?, ?, ?, ?, ?)`, [
             template_id,
             customerId,
             schedule_id,
-            group_id || null
+            group_id || null,
+			1
         ]);
     }
-    if (customers.length = 1) {
-		res.redirect(`/customers/${customers[0]}`);
-	} else {
-		res.redirect('/assignments');
-	}
+    const redirect_url = (customers.length == 1)
+		? `/customers/${customers[0]}`
+		: '/assignments';
+		
+	res.status(200).json({ success: true, redirect: redirect_url });
 });
 
-router.post('/:id', async (req, res) => {
+router.put('/:id', async (req, res) => {
     const { schedule_id, group_id } = req.body;
 
 	await db.query(`CALL update_assignment(?, ?, ?, ?)`, [
@@ -54,7 +55,7 @@ router.post('/:id', async (req, res) => {
 		group_id || null,
 		1
 	]);
-    res.sendStatus(200);
+    res.status(200).json({ success: true });
 });
 
 router.delete('/:id', async (req, res) => {
@@ -62,7 +63,7 @@ router.delete('/:id', async (req, res) => {
 		req.params.id,
 		1
 	]);
-    res.sendStatus(200);
+    res.status(200).json({ success: true });
 });
 
 module.exports = router;

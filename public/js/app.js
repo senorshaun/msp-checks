@@ -28,7 +28,7 @@ window.updateInlineField = async function ({
     }
 
     try {
-        const res = await api_post(endpoint, {
+        const res = await api_fetch('POST', endpoint, {
                 id,
                 [fieldName]: value
             });
@@ -59,28 +59,32 @@ function debounce(fn, delay = 500) {
     };
 }
 
-async function api_post(url, data) {
-    const res = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-    });
-
-    if (!res.ok) throw new Error('API POST error');
-    return res.json();
-}
-
-async function api_get(url) {
-    const res = await fetch(url, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
-    });
-
-    if (!res.ok) throw new Error('API GET error');
-    return res.json();
-}
-
-function getNameValue(name) {
-    const wrapper = document.querySelector(`[name="${name}"]`);
-    return wrapper?.getValues?.()[0];
+async function api_fetch(method, url, data) {
+    if (data?.formData) data = data.formData;
+    const options = {
+		method,
+		redirect: 'follow'
+	};
+	if (data != null) {
+		options.headers = { 'Content-Type': 'application/json' };
+		options.body = JSON.stringify(data);
+	}
+	const res = await fetch(url, options);
+    let payload;
+    try {
+        payload = await res.json();
+    } catch (e) {
+        throw new Error(`Invalid JSON response (status ${res.status})`);
+    }
+	if (payload.redirect) {
+        window.location.href = payload.redirect;
+        return;
+    }
+    if (!res.ok) {
+        throw new Error(payload?.error || `Request failed (${res.status})`);
+    }
+    if (!payload.success) {
+        throw new Error(payload.error || 'API returned success=false');
+    }
+    return payload.data ?? null;
 }

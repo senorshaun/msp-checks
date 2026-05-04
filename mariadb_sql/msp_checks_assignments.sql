@@ -18,13 +18,13 @@ USE `msp_checks`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `template_assignments`
+-- Table structure for table `assignments`
 --
 
-DROP TABLE IF EXISTS `template_assignments`;
+DROP TABLE IF EXISTS `assignments`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `template_assignments` (
+CREATE TABLE `assignments` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `template_id` int(11) NOT NULL,
   `customer_id` int(11) NOT NULL,
@@ -39,20 +39,20 @@ CREATE TABLE `template_assignments` (
   KEY `customer_id` (`customer_id`),
   KEY `schedule_id` (`schedule_id`),
   KEY `group_id` (`group_id`),
-  CONSTRAINT `template_assignments_ibfk_1` FOREIGN KEY (`template_id`) REFERENCES `task_templates` (`id`),
-  CONSTRAINT `template_assignments_ibfk_2` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`),
-  CONSTRAINT `template_assignments_ibfk_3` FOREIGN KEY (`schedule_id`) REFERENCES `schedules` (`id`),
-  CONSTRAINT `template_assignments_ibfk_4` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`)
+  CONSTRAINT `assignments_ibfk_1` FOREIGN KEY (`template_id`) REFERENCES `templates` (`id`),
+  CONSTRAINT `assignments_ibfk_2` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`),
+  CONSTRAINT `assignments_ibfk_3` FOREIGN KEY (`schedule_id`) REFERENCES `schedules` (`id`),
+  CONSTRAINT `assignments_ibfk_4` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `template_assignments`
+-- Dumping data for table `assignments`
 --
 
-LOCK TABLES `template_assignments` WRITE;
-/*!40000 ALTER TABLE `template_assignments` DISABLE KEYS */;
-/*!40000 ALTER TABLE `template_assignments` ENABLE KEYS */;
+LOCK TABLES `assignments` WRITE;
+/*!40000 ALTER TABLE `assignments` DISABLE KEYS */;
+/*!40000 ALTER TABLE `assignments` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

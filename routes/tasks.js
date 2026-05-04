@@ -16,9 +16,12 @@ router.get('/task/:id', async (req, res) => {
     const [task] = await db.query(`CALL get_task(?)`, [req.params.id]);
 	const [steps] = await db.query(`CALL get_task_steps(?)`, [req.params.id]);
 
-	res.json({
-		task: task[0][0],
-		steps: steps[0]
+	res.status(200).json({
+		success: true,
+		data: {
+			task: task[0][0],
+			steps: steps[0]
+		}
 	});
 });
 
@@ -29,7 +32,7 @@ router.post('/step/update', async (req, res) => {
         step_id, completed, 1, notes
     ]);
 
-    res.sendStatus(200);
+    res.status(200).json({ success: true });
 });
 
 router.post('/task/complete', async (req, res) => {
@@ -41,7 +44,7 @@ router.post('/task/complete', async (req, res) => {
         )
     `, [req.body.task_id]);
 
-    res.sendStatus(200);
+    res.status(200).json({ success: true });
 });
 
 module.exports = router;

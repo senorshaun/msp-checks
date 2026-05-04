@@ -11,12 +11,25 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(expressLayouts);
 app.set('layout', 'layout'); // refers to views/layout.ejs
 
+// Middleware
+const helpers = require('./utils/validation');
+app.use((req, res, next) => {
+	req.helpers = helpers;
+	next();
+});
+
 // Routes
 app.use('/', require('./routes/tasks'));
 app.use('/templates', require('./routes/templates'));
 app.use('/schedules', require('./routes/schedules'));
 app.use('/customers', require('./routes/customers'));
 app.use('/assignments', require('./routes/assignments'));
+
+// Error handling middleware
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ status: 'error', message: 'Internal Server Error' });
+});
 
 app.listen(3000, () => {
     console.log('http://localhost:3000');

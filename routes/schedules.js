@@ -10,10 +10,10 @@ router.get('/', async (req, res) => {
 	});
 });
 
-router.post('/create', async (req, res) => {
-	const errors = requireFields(req.body, ['name']);
+router.post('/', async (req, res) => {
+	const errors = req.helpers.requireFields(req.body, ['name']);
 	if (errors.length) {
-		return res.status(400).send(errors.join(', '));
+		return res.status(400).json({success: false, error: errors.join(', ')});
 	}
 	
 	const { name, frequency, interval, day_of_week, day_of_month, start_date } = req.body;
@@ -28,18 +28,18 @@ router.post('/create', async (req, res) => {
 		1
 	]);
 
-    res.redirect('/schedules');
+    res.status(200).json({ succcess: true, redirect: '/schedules' });
 });
 
-router.post('/update', async (req, res) => {
-	const { id, name, frequency, interval, day_of_week, day_of_month } = req.body;
-	const errors = requireFields(req.body, ['name']);
+router.put('/:id', async (req, res) => {
+	const { name, frequency, interval, day_of_week, day_of_month } = req.body;
+	const errors = req.helpers.requireFields(req.body, ['name']);
 	if (errors.length) {
-		return res.status(400).send(errors.join(', '));
+		return res.status(400).json({success: false, error: errors.join(', ')});
 	}
 
     await db.query(`CALL update_schedule(?, ?, ?, ?, ?, ?, ?)`, [
-		id,
+		req.params.id,
 		name.trim(),
 		frequency,
 		interval,
@@ -48,7 +48,16 @@ router.post('/update', async (req, res) => {
 		1
 	]);
 
-    res.sendStatus(200);
+    res.status(200).json({ success: true });
+});
+
+router.delete('/:id', async (req, res) => {
+    await db.query(`CALL delete_schedule(?, ?)`, [
+		req.params.id,
+		1
+	]);
+
+    res.status(200).json({ success: true });
 });
 
 module.exports = router;

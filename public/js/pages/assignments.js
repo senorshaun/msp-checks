@@ -1,57 +1,114 @@
-const templates = window.__DATA__.templates || [];
-const schedules = window.__DATA__.schedules || [];
-const groups = window.__DATA__.groups || [];
-const customers = window.__DATA__.customers || [];
+document.addEventListener('DOMContentLoaded', initPage);
+let data;
+function initPage() {
+    data = window.__DATA__ || {
+        assignments: [],
+        customers: [],
+        templates: [],
+        schedules: []
+    };
 
+    initAssignmentActions();
+}
 
-function openAddAssignmentModal() {
-    openModal(`
-        <h3>Add Assignment</h3>
+function initAssignmentActions(data) {
+    const createBtn = document.getElementById('createAssignmentBtn');
+    if (createBtn) createBtn.addEventListener('click', () => openCreateAssignmentModal(data));
+    document.querySelectorAll('.assignment-card').forEach(card => {
+        const id = card.dataset.id;
+        const assignment = data.assignments.find(a => String(a.id) === String(id));
+        if (!assignment) return;
+        const editBtn = card.querySelector('.edit-assignment-btn');
+        const deleteBtn = card.querySelector('.delete-assignment-btn');
+        if (editBtn) editBtn.addEventListener('click', () => openEditAssignmentModal(assignment, data));
+        if (deleteBtn) deleteBtn.addEventListener('click', () => deleteAssignment(assignment));
+    });
+}
 
-		<div class="form-group">
-			<label>Template</label>
-			${buildSearchableSelect({
-				name: 'template_id',
-				data: templates,
-				placeholder: 'Select Template'
-			})}
-		</div>
+function getAssignmentFormFields(data) {
+    return [
+        {
+            name: 'customer_id',
+            label: 'Customer',
+            type: 'select',
+            required: true,
+            options: data.customers.map(c => ({
+                label: c.name,
+                value: c.id
+            }))
+        },
+        {
+            name: 'template_id',
+            label: 'Template',
+            type: 'select',
+            required: true,
+            options: data.templates.map(t => ({
+                label: t.name,
+                value: t.id
+            }))
+        },
+        {
+            name: 'schedule_id',
+            label: 'Schedule',
+            type: 'select',
+            required: true,
+            options: data.schedules.map(s => ({
+                label: s.name,
+                value: s.id
+            }))
+        },
+        {
+            name: 'group_id',
+            label: 'Group',
+            type: 'select',
+            required: true,
+            options: data.groups.map(g => ({
+                label: g.name,
+                value: g.id
+            }))
+        }
+    ];
+}
 
-		<div class="form-group">
-			<label>Schedule</label>
-			${buildSearchableSelect({
-				name: 'schedule_id',
-				data: schedules,
-				placeholder: 'Select Schedule'
-			})}
-		</div>
+function openCreateAssignmentModal(data) {
+    openFormModal({
+        title: 'Create Assignment',
+        fields: getAssignmentFormFields(data),
+        onSubmit: async (formData) => {
+            await fetch('/assignments', {
+                formData
+            });
+            location.reload();
+        }
+    });
+}
 
-		<div class="form-group">
-			<label>Group</label>
-			${buildSearchableSelect({
-				name: 'group_id',
-				data: groups,
-				placeholder: 'Select Group'
-			})}
-		</div>
-	
-		<div class="form-group">	
-			<label>Customer</label>
-			${buildSearchableSelect({
-				name: 'customer_ids',
-				data: customers,
-				placeholder: 'Select Customer',
-				multiple:true
-			})}
-		</div>
+function openEditAssignmentModal(assignment, data) {
+    openFormModal({
+        title: 'Edit Assignment',
+        fields: getAssignmentFormFields(data),
+        initialValues: assignment,
+        onSubmit: async (formData) => {
+            await api_fetch('PUT', `/assignments/${assignment.id}`, {
+                formData
+            });
+            location.reload();
+        }
+    });
+}
 
-        <div style="margin-top:10px;">
-            <button onclick="submitAddAssignment()">Save</button>
-            <button onclick="closeModal()">Cancel</button>
-        </div>
-    `);
-
-    initSearchableSelects();
+function deleteAssignment(assignment) {
+    openFormModal({
+        title: 'Delete Assignment',
+        fields: [],
+        submitText: 'Delete',
+        submitClass: 'btn-danger',
+        description: `Are you sure you want to delete this assignment?`,
+        onSubmit: async () => {
+            await api_fetch('DELETE', `/assignments/${assignment.id}`, null);
+            location.reload();
+        }
+    });
 }
 
 async function submitAddAssignment() {
@@ -66,7 +123,7 @@ async function submitAddAssignment() {
         return alert('Template, schedule, group and customer required');
     }
 
-    await api_post(`/assignments/create`, {
+    await api_fetch('POST', `/assignments/create`, {
             template_id: template,
             schedule_id: schedule,
             group_id: group, 

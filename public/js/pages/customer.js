@@ -1,13 +1,13 @@
 document.addEventListener('DOMContentLoaded', initPage);
-
+let data;
 function initPage() {
-    const data = window.__DATA__;
-    initCustomerSwitcher(data);
-    initGroupSelects(data);
-    initAssignmentActions(data);
+    data = window.__DATA__;
+    initCustomerSwitcher();
+    initGroupSelects();
+    initAssignmentActions();
 }
 
-function initCustomerSwitcher(data) {
+function initCustomerSwitcher() {
     const container = document.getElementById('customerSwitcherContainer');
 
     container.innerHTML = buildSearchableSelect({
@@ -27,7 +27,7 @@ function initCustomerSwitcher(data) {
     });
 }
 
-function initGroupSelects(data) {
+function initGroupSelects() {
     document.querySelectorAll('.group-select').forEach(el => {
 
         const assignmentId = el.dataset.assignmentId;
@@ -51,7 +51,7 @@ function initGroupSelects(data) {
 }
 
 async function updateAssignmentGroup(assignmentId, groupId) {
-    await api_post(`/assignments/${assignmentId}/group`, {
+    await api_fetch('POST',`/assignments/${assignmentId}/group`, {
         group_id: groupId
     });
 }
@@ -67,14 +67,14 @@ function updateGroupLabel(container, groupId, groups) {
     label.textContent = selected ? selected.name : 'Unassigned';
 }
 
-function initAssignmentActions(data) {
+function initAssignmentActions() {
     const addBtn = document.getElementById('addAssignmentBtn');
     if (addBtn) {
-        addBtn.addEventListener('click', () => openAssignModal(data));
+        addBtn.addEventListener('click', () => openAssignModal());
     }
 	const copyBtn = document.getElementById('copyAssignmentBtn');
     if (copyBtn) {
-        copyBtn.addEventListener('click', () => openCopyModal(data));
+        copyBtn.addEventListener('click', () => openCopyModal());
     }
     document.querySelectorAll('.delete-assignment').forEach(btn => {
         btn.addEventListener('click', async () => {
@@ -93,7 +93,7 @@ function removeAssignmentFromUI(id) {
     if (el) el.remove();
 }
 
-function openAssignModal(data) {
+function openAssignModal() {
     openFormModal({
         title: 'Add Assignment',
         fields: [
@@ -121,13 +121,13 @@ function openAssignModal(data) {
                 return alert('All fields required');
             }
 
-            await api_post(`/customers/${customerId}/add-assignment`, values);
+            await api_fetch('POST', `/customers/${customerId}/add-assignment`, values);
             location.reload();
         }
     });
 }
 
-function openCopyModal(data) {
+function openCopyModal() {
     openFormModal({
         title: 'Copy Assignments',
         fields: [
@@ -161,7 +161,7 @@ function openCopyModal(data) {
         onSubmit: async (values) => {
             if (!values.source_customer_id) return alert('Select a source customer');
             if (!values.assignment_ids.length) return alert('No assignments selected');
-            await api_post(`/customers/${customerId}/copy-assignments`, {
+            await api_fetch('POST', `/customers/${customerId}/copy-assignments`, {
                 source_customer_id: values.source_customer_id,
                 assignment_ids: values.assignment_ids
             });

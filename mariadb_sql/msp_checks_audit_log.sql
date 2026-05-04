@@ -29,7 +29,6 @@ CREATE TABLE `audit_log` (
   `entity_type` varchar(50) DEFAULT NULL,
   `entity_id` int(11) DEFAULT NULL,
   `action_type` varchar(50) DEFAULT NULL,
-  `field_name` varchar(50) DEFAULT NULL,
   `old_value` text DEFAULT NULL,
   `new_value` text DEFAULT NULL,
   `user_id` int(11) DEFAULT NULL,

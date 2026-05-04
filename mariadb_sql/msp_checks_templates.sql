@@ -18,13 +18,13 @@ USE `msp_checks`;
 /*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
 
 --
--- Table structure for table `task_templates`
+-- Table structure for table `templates`
 --
 
-DROP TABLE IF EXISTS `task_templates`;
+DROP TABLE IF EXISTS `templates`;
 /*!40101 SET @saved_cs_client     = @@character_set_client */;
 /*!50503 SET character_set_client = utf8mb4 */;
-CREATE TABLE `task_templates` (
+CREATE TABLE `templates` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(255) NOT NULL,
   `description` text DEFAULT NULL,
@@ -36,13 +36,13 @@ CREATE TABLE `task_templates` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
--- Dumping data for table `task_templates`
+-- Dumping data for table `templates`
 --
 
-LOCK TABLES `task_templates` WRITE;
-/*!40000 ALTER TABLE `task_templates` DISABLE KEYS */;
-INSERT INTO `task_templates` VALUES (1,'',NULL,1,1,'2026-04-14 23:03:25'),(2,'Clean Server Fans',NULL,1,1,'2026-04-14 23:03:40');
-/*!40000 ALTER TABLE `task_templates` ENABLE KEYS */;
+LOCK TABLES `templates` WRITE;
+/*!40000 ALTER TABLE `templates` DISABLE KEYS */;
+INSERT INTO `templates` VALUES (1,'',NULL,1,1,'2026-04-14 23:03:25'),(2,'Clean Server Fans',NULL,1,1,'2026-04-14 23:03:40');
+/*!40000 ALTER TABLE `templates` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
 

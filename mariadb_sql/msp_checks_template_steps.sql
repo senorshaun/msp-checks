@@ -34,7 +34,7 @@ CREATE TABLE `template_steps` (
   `modified_at` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   KEY `template_id` (`template_id`),
-  CONSTRAINT `template_steps_ibfk_1` FOREIGN KEY (`template_id`) REFERENCES `task_templates` (`id`)
+  CONSTRAINT `template_steps_ibfk_1` FOREIGN KEY (`template_id`) REFERENCES `templates` (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

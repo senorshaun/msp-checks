@@ -26,7 +26,7 @@ DROP TABLE IF EXISTS `tasks`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `tasks` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `template_assignment_id` int(11) DEFAULT NULL,
+  `assignments_id` int(11) DEFAULT NULL,
   `customer_id` int(11) DEFAULT NULL,
   `template_id` int(11) DEFAULT NULL,
   `name` varchar(255) DEFAULT NULL,
@@ -38,15 +38,15 @@ CREATE TABLE `tasks` (
   `status_changed_by` int(11) DEFAULT NULL,
   `modified_at` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  KEY `template_assignment_id` (`template_assignment_id`),
+  KEY `assignments_id` (`assignments_id`),
   KEY `customer_id` (`customer_id`),
   KEY `template_id` (`template_id`),
   KEY `group_id` (`group_id`),
   KEY `status_id` (`status_id`),
   KEY `status_changed_by` (`status_changed_by`),
-  CONSTRAINT `tasks_ibfk_1` FOREIGN KEY (`template_assignment_id`) REFERENCES `template_assignments` (`id`),
+  CONSTRAINT `tasks_ibfk_1` FOREIGN KEY (`assignments_id`) REFERENCES `assignments` (`id`),
   CONSTRAINT `tasks_ibfk_2` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`),
-  CONSTRAINT `tasks_ibfk_3` FOREIGN KEY (`template_id`) REFERENCES `task_templates` (`id`),
+  CONSTRAINT `tasks_ibfk_3` FOREIGN KEY (`template_id`) REFERENCES `templates` (`id`),
   CONSTRAINT `tasks_ibfk_4` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`),
   CONSTRAINT `tasks_ibfk_5` FOREIGN KEY (`status_id`) REFERENCES `task_statuses` (`id`),
   CONSTRAINT `tasks_ibfk_6` FOREIGN KEY (`status_changed_by`) REFERENCES `users` (`id`)

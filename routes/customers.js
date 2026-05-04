@@ -19,7 +19,7 @@ router.get('/:id', async (req, res) => {
         [req.params.id]
     );
 	const [assignments] = await db.query(`CALL get_customer_assignments(?)`, [req.params.id]);
-	const [templates] = await db.query(`CALL get_task_templates()`);
+	const [templates] = await db.query(`CALL get_templates()`);
 	const [groups] = await db.query(`CALL get_groups()`);
 	const [schedules] = await db.query(`CALL get_schedules()`);
 	const [customers] = await db.query(`CALL get_customers()`);
@@ -40,38 +40,7 @@ router.get('/:id/assignments/json', async (req, res) => {
         [req.params.id]
     );
 
-    res.json(rows[0]);
-});
-
-router.post('/:id/copy-assignments', async (req, res) => {
-    const targetId = req.params.id;
-    const { source_customer_id, assignment_ids } = req.body;
-
-    if (!Array.isArray(assignment_ids)) {
-        return res.sendStatus(400);
-    }
-
-    const [rows] = await db.query(
-        `CALL get_customer_assignments(?)`,
-        [source_customer_id]
-    );
-
-    const map = {};
-    rows[0].forEach(a => map[a.id] = a);
-
-    for (const id of assignment_ids) {
-        const a = map[id];
-        if (!a) continue;
-
-        await db.query(`CALL assign_template(?, ?, ?, ?)`, [
-            a.template_id,
-            targetId,
-            a.schedule_id,
-            a.group_id
-        ]);
-    }
-
-    res.sendStatus(200);
+        res.status(200).json({ success: true, data:rows[0]});
 });
 
 router.post('/:id/add-assignment', async (req, res) => {
@@ -82,7 +51,7 @@ router.post('/:id/add-assignment', async (req, res) => {
         req.body.group_id
     ]);
 
-    res.redirect(`/customers/${req.params.id}`);
+    res.status(200).json({ success: true, redirect: `/customers/${req.params.id}` });
 });
 
 router.post('/:id/copy-assignments', async (req, res) => {
@@ -90,10 +59,13 @@ router.post('/:id/copy-assignments', async (req, res) => {
     const { source_customer_id, assignment_ids } = req.body;
 
     if (!Array.isArray(assignment_ids) || assignment_ids.length === 0) {
-        return res.redirect(`/customers/${targetCustomerId}`);
+        return res.status(400).json({ 
+			success: false, 
+			error: 'No assignments selected', 
+			redirect: `/customers/${targetCustomerId}`
+		});
     }
 
-    // Get all assignments for source
     const [rows] = await db.query(
         `CALL get_customer_assignments(?)`,
         [source_customer_id]
@@ -116,17 +88,17 @@ router.post('/:id/copy-assignments', async (req, res) => {
         ]);
     }
 
-    res.redirect(`/customers/${targetCustomerId}`);
+    res.status(200).json({ success: true, redirect: `/customers/${targetCustomerId}` });
 });
 
 router.post('/update-group', async (req, res) => {
-    await db.query(`CALL update_template_assignment_group(?, ?, ?)`, [
+    await db.query(`CALL update_assignments_group(?, ?, ?)`, [
 		req.body.assignment_id,
 		req.body.group_id,
 		1
 	]);
 
-    res.sendStatus(200);
+    res.status(200).json({ success: true });
 });
 
 module.exports = router;

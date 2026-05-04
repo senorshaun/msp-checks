@@ -357,7 +357,7 @@ async function loadTask(id) {
 	document.getElementById('drawerSteps').innerHTML = 'Loading...';
 	openDrawer();
 	
-    const res = await api_get(`/task/${id}`);
+    const res = await api_fetch('GET', `/task/${id}`, null);
     const task = res.task;
     const steps = res.steps;
     currentTaskId = id;
@@ -388,7 +388,7 @@ async function loadTask(id) {
 
 /* ---------------- STEP UPDATE ---------------- */
 async function updateStep(id, completed, notes = null) {
-    await api_post('/step/update', {
+    await api_fetch('POST', '/step/update', {
 		step_id: id,
 		completed: completed,
 		notes: notes,
@@ -404,7 +404,7 @@ async function completeTask() {
         alert('All steps must be completed before finishing this task.');
         return;
     }
-    const res = await api_post('/task/complete', {
+    const res = await api_fetch('POST', '/task/complete', {
 		task_id: currentTaskId,
 		user_id: 1
     });
