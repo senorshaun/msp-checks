@@ -37,6 +37,7 @@ CREATE TABLE `tasks` (
   `status_changed_at` datetime DEFAULT NULL,
   `status_changed_by` int(11) DEFAULT NULL,
   `modified_at` datetime DEFAULT current_timestamp(),
+  `modified_by` int(11) DEFAULT NULL,
   PRIMARY KEY (`id`),
   KEY `assignments_id` (`assignments_id`),
   KEY `customer_id` (`customer_id`),
@@ -44,12 +45,14 @@ CREATE TABLE `tasks` (
   KEY `group_id` (`group_id`),
   KEY `status_id` (`status_id`),
   KEY `status_changed_by` (`status_changed_by`),
+  KEY `status_changed_by` (`status_changed_by`),
   CONSTRAINT `tasks_ibfk_1` FOREIGN KEY (`assignments_id`) REFERENCES `assignments` (`id`),
   CONSTRAINT `tasks_ibfk_2` FOREIGN KEY (`customer_id`) REFERENCES `customers` (`id`),
   CONSTRAINT `tasks_ibfk_3` FOREIGN KEY (`template_id`) REFERENCES `templates` (`id`),
   CONSTRAINT `tasks_ibfk_4` FOREIGN KEY (`group_id`) REFERENCES `groups` (`id`),
   CONSTRAINT `tasks_ibfk_5` FOREIGN KEY (`status_id`) REFERENCES `task_statuses` (`id`),
-  CONSTRAINT `tasks_ibfk_6` FOREIGN KEY (`status_changed_by`) REFERENCES `users` (`id`)
+  CONSTRAINT `tasks_ibfk_6` FOREIGN KEY (`status_changed_by`) REFERENCES `users` (`id`),
+  CONSTRAINT `tasks_ibfk_7` FOREIGN KEY (`modified_by`) REFERENCES `users` (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

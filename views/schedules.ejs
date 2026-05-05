@@ -24,6 +24,10 @@
 						<% if (s.frequency === 'monthly') { %>
 							<div>Day (Month): <%= s.day_of_month %></div>
 						<% } %>
+						<% if (s.frequency === 'yearly') { %>
+							<div>Day (Month): <%= s.day_of_month %></div>
+							<div>Month: <%= s.month_of_year %></div>
+						<% } %>
                     </div>
                 </div>
 

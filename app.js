@@ -13,8 +13,10 @@ app.set('layout', 'layout'); // refers to views/layout.ejs
 
 // Middleware
 const helpers = require('./utils/validation');
+const normalize = require('./utils/normalize');
 app.use((req, res, next) => {
 	req.helpers = helpers;
+	req.normalize = normalize;
 	next();
 });
 

@@ -19,6 +19,10 @@
                         <span class="group-name">
                             <%= a.group_name || 'Unassigned' %>
                         </span>
+						Schedule:
+                        <span class="schedule-name">
+                            <%= a.schedule || 'Not set' %>
+                        </span>
                     </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
@@ -34,6 +38,29 @@
                     </button>
                 </div>
 
+            </div>
+        </div>
+    <% }) %>
+</div>
+<div id="ticketList" class="d-flex flex-column gap-3">
+    <% tickets.forEach(t => { %>
+        <div class="card msp-card assignment-card" data-id="<%= t.id %>" onclick="window.open('https://app.atera.com/new/ticket/<%= ticket.id %>', '_blank')">
+            <div class="card-body d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="card-title fw-semibold">
+                        <%= t.title %>
+                    </div>
+                    <div class="text-muted small">
+                        Status:
+                        <span class="status-name">
+                            <%= t.status_name || 'Unassigned' %>
+                        </span>
+						Tech:
+                        <span class="tech-name">
+                            <%= t.meta.technicianid || 'Unassigned' %>
+                        </span>
+                    </div>
+                </div>
             </div>
         </div>
     <% }) %>

@@ -5,7 +5,7 @@ let statusConfig;
 function initPage() {
     data = window.__DATA__;
 	appState = {
-		tasks: data.tasks || [],
+		items: data.items || [],
 		customers: flattenData(data.customers, 'customers') || [],
 		filters: {
 			customers: [],
@@ -155,7 +155,8 @@ function renderCustomerFilter() {
             ...appState.customers
         ],
         placeholder: 'Filter Customers',
-        multiple: true
+        multiple: true,
+		grouped: true
     });
     initSearchableSelects();
     const wrapper = container.querySelector('[data-name="customerFilter"]');
@@ -167,10 +168,10 @@ function renderCustomerFilter() {
     });
 }
 	
-function getFilteredTasks() {
+function getFilteredItems() {
     const customerSelected = appState.filters.customers;
     const hasCustomerFilter = customerSelected.length && !customerSelected.includes('');
-    return appState.tasks.filter(t => {
+    return appState.items.filter(t => {
         const matchesCustomer = !hasCustomerFilter ||
             customerSelected.includes(String(t.customer_id));
         const matchesStatus = appState.filters.statuses.includes(t.status_name);
@@ -189,7 +190,7 @@ function getWeekDates(baseDate = new Date()) {
         return d;
     });
 }
-function groupTasks(tasks) {
+function groupItems(items) {
     const now = new Date();
     const weekDates = getWeekDates(appState.ui.currentWeekStart);
     const buckets = {
@@ -202,7 +203,7 @@ function groupTasks(tasks) {
         const key = d.toDateString();
         buckets.days[key] = [];
     });
-    tasks.forEach(t => {
+    items.forEach(t => {
         const due = new Date(t.due_date);
         if (due < now && t.status_name !== 'complete') {
             buckets.pastDue.push(t);
@@ -225,8 +226,8 @@ function groupTasks(tasks) {
 
 function renderBoard() {
     const container = document.getElementById('boardView');
-    const filtered = getFilteredTasks();
-    const buckets = groupTasks(filtered);
+    const filtered = getFilteredItems();
+    const buckets = groupItems(filtered);
     const weekDates = getWeekDates(appState.ui.currentWeekStart);
     renderWeekLabel(weekDates);
     const columns = [
@@ -244,52 +245,42 @@ function renderWeekLabel(weekDates) {
         `${weekDates[0].toLocaleDateString()} - ${weekDates[4].toLocaleDateString()}`;
 }
 
-function renderPastDueColumn(tasks) {
-    return renderColumn('Past Due', tasks);
+function renderPastDueColumn(items) {
+    return renderColumn('Past Due', items);
 }
 
-function renderDayColumn(date, tasks) {
+function renderDayColumn(date, items) {
     return renderColumn(
         date.toLocaleDateString([], { weekday: 'short' }),
-        tasks
+        items
     );
 }
 
-function renderWeekendColumn(satTasks, sunTasks) {
+function renderWeekendColumn(satItems, sunItems) {
     return `
         <div class="board-column">
             <div class="board-header">Weekend</div>
             <div class="weekend-split">
                 <div class="weekend-half">
                     <strong>Sat</strong>
-                    ${satTasks.map(renderTaskCard).join('')}
+                    ${satItems.map(renderDashboardItem).join('')}
                 </div>
                 <div class="weekend-half">
                     <strong>Sun</strong>
-                    ${sunTasks.map(renderTaskCard).join('')}
+                    ${sunItems.map(renderDashboardItem).join('')}
                 </div>
             </div>
         </div>
     `;
 }
 
-function renderTaskCard(t) {
-    return `
-        <div class="card mb-2 ${t.status_name === 'complete' ? 'task-complete-card' : ''}"
-             onclick="loadTask(${t.id})">
-            <strong>${formatTaskTitle(t)}</strong><br>
-            <small>${t.customer_name}</small>
-        </div>
-    `;
-}
-
-function renderColumn(title, tasks) {
-    const sorted = sortTasks(tasks);
+function renderColumn(title, items) {
+    const sorted = sortItems(items);
     return `
         <div class="board-column">
             <div class="board-header">${title}</div>
             <div class="board-content">
-                ${sorted.map(renderTaskCard).join('')}
+                ${sorted.map(renderDashboardItem).join('')}
             </div>
         </div>
     `;
@@ -316,8 +307,8 @@ function resetWeek() {
     renderBoard();
 }
 
-function sortTasks(tasks) {
-    return [...tasks].sort((a, b) => {
+function sortItems(items) {
+    return [...items].sort((a, b) => {
         const aDate = new Date(a.due_date);
         const bDate = new Date(b.due_date);
 
@@ -411,16 +402,16 @@ async function completeTask() {
     if (!res.ok) {
         return alert('Failed to complete task');
     }
-    const task = appState.tasks.find(t => t.id === currentTaskId);
-    if (task) {
-        task.status_name = 'complete';
+    const item = appState.items.find(t => t.id === currentTaskId);
+    if (item) {
+        item.status_name = 'complete';
     }
     render();
     closeDrawer();
 }
 
-function formatTaskTitle(t) {
-    if (!t.due_date) return t.name;
+function formatItemTitle(t) {
+    if (!t.due_date) return `${t.name} - ${t.customer_name}`;
 	if (t.status_name == "complete") return t.name;
     const date = new Date(t.due_date);
     const hasTime =
@@ -432,5 +423,21 @@ function formatTaskTitle(t) {
         hour: 'numeric',
         minute: '2-digit'
     });
-    return `${time} - ${t.name}`;
+    return `${time} - ${t.name} - ${t.customer_name}`;
+}
+
+function renderDashboardItem(item) {
+  const div = document.createElement('div');
+  div.className = `dashboard-item ${item.isComplete ? 'task-complete-card' : ''}`;
+  div.innerText = "<strong>"+formatItemTitle(item)+"</strong><br><small>"+item.customer_name+"</small>";
+
+  div.addEventListener('click', () => {
+    if (item.type === 'ticket') {
+      window.open(`https://app.atera.com/new/ticket/${item.id}`, '_blank');
+    } else {
+      loadTask(item.id);
+    }
+  });
+
+  return div;
 }

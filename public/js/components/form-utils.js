@@ -90,7 +90,9 @@ function renderField(field, initialValues = {}) {
                     ${buildSearchableSelect({
                         name: field.name,
                         data: field.options || [],
-                        placeholder: field.placeholder || 'Select...'
+                        placeholder: field.placeholder || 'Select...',
+						multiple: field.multiple || false,
+						grouped: field.grouped || false
                     })}
                 </div>
             `;
@@ -129,6 +131,7 @@ function renderField(field, initialValues = {}) {
                         name="${field.name}" 
                         class="form-control"
                         value="${value ?? ''}"
+						placeholder="${field.placeholder || '1'}"
                     >
                 </div>
             `;

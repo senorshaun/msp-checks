@@ -5,10 +5,15 @@ const db = require('../db');
 router.get('/', async (req, res) => {
     const [tasks] = await db.query(`CALL get_tasks()`);
 	const [customers] = await db.query(`CALL get_customers()`);
-	const customerArray = req.helpers.buildCustomerResponse(customers[0]);
+	const customerArray = req.normalize.buildCustomerResponse(customers[0]);
+	const [tickets] =  await db.query(`CALL get_tickets()`);
+	const items = [
+		...tasks[0].map(t => req.normalize.normalizeTask(t)),
+		...tickets[0].map(t=> req.normalize.normalizeTickets(t))
+	];
 
 	res.render('dashboard', {
-		tasks: tasks[0],
+		items: items,
 		customers: customerArray
 	});
 });

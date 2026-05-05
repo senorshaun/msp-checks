@@ -112,6 +112,7 @@ BEGIN
     DECLARE v_interval INT;
     DECLARE v_day_of_week SET('mon','tue','wed','thu','fri','sat','sun');
     DECLARE v_day_of_month INT;
+	DECLARE v_month_of_year INT;
 
     DECLARE v_start_date DATE;
     DECLARE v_last_run DATETIME;
@@ -128,6 +129,7 @@ BEGIN
         s.interval_value,
         s.day_of_week,
         s.day_of_month,
+		s.month_of_year,
         s.start_date,
         a.last_run
     INTO
@@ -135,6 +137,7 @@ BEGIN
         v_interval,
         v_day_of_week,
         v_day_of_month,
+		v_month_of_year,
         v_start_date,
         v_last_run
     FROM assignments a
@@ -181,6 +184,22 @@ BEGIN
             );
         END IF;
 
+	-- YEARLY
+    ELSEIF v_frequency = 'yearly' THEN
+
+        SET v_candidate = DATE_ADD(v_base_date, INTERVAL v_interval YEAR);
+		IF v_month_of_year IS NOT NULL THEN
+            SET v_candidate = DATE_ADD(
+                DATE_FORMAT(v_candidate, '%Y-01-%d'),
+                INTERVAL (v_month_of_year - 1) MONTH
+            );
+        END IF;
+        IF v_day_of_month IS NOT NULL THEN
+            SET v_candidate = DATE_ADD(
+                DATE_FORMAT(v_candidate, '%Y-%m-01'),
+                INTERVAL (v_day_of_month - 1) DAY
+            );
+        END IF;
     ELSE
         SET v_candidate = v_base_date + INTERVAL 1 DAY;
     END IF;
@@ -214,14 +233,15 @@ CREATE DEFINER=`shaun`@`%` PROCEDURE `create_schedule`(
     IN p_interval INT,
     IN p_day_of_week VARCHAR(50),
     IN p_day_of_month INT,
+	IN p_month_of_year INT,
     IN p_start_date DATE,
     IN p_user_id INT
 )
 BEGIN
     INSERT INTO schedules
-    (name, frequency, interval_value, day_of_week, day_of_month, start_date, modified_at, modified_by)
+    (name, frequency, interval_value, day_of_week, day_of_month, month_of_year, start_date, modified_at, modified_by)
     VALUES
-    (p_name, p_frequency, p_interval, p_day_of_week, p_day_of_month, p_start_date, CURRENT_TIMESTAMP, p_user_id);
+    (p_name, p_frequency, p_interval, p_day_of_week, p_day_of_month, p_month_of_year, p_start_date, CURRENT_TIMESTAMP, p_user_id);
 	
 	CALL log_audit(
         'schedule',
@@ -229,7 +249,7 @@ BEGIN
         'create',
         p_user_id,
         NULL,
-        JSON_OBJECT('name', p_name, 'frequency', p_frequency, 'interval_value', p_interval, 'day_of_week', p_day_of_week, 'day_of_month', p_day_of_month, 'start_date', p_start_date)
+        JSON_OBJECT('name', p_name, 'frequency', p_frequency, 'interval_value', p_interval, 'day_of_week', p_day_of_week, 'day_of_month', p_day_of_month, 'month_of_year', p_month_of_year, 'start_date', p_start_date)
     );
 END ;;
 DELIMITER ;
@@ -639,7 +659,7 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
-/*!50003 DROP PROCEDURE IF EXISTS `get_all_assignments` */;
+/*!50003 DROP PROCEDURE IF EXISTS `get_assignments` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
 /*!50003 SET @saved_col_connection = @@collation_connection */ ;
@@ -649,16 +669,20 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`shaun`@`%` PROCEDURE `get_all_assignments`()
+CREATE DEFINER=`shaun`@`%` PROCEDURE `get_assignments`()
 BEGIN
     SELECT 
-        a.*,
+        a.id,
+		a.template_id,
+		a.customer_id,
+		a.schedule_id,
+		a.group_id,
         t.name AS template_name,
         c.name AS customer_name,
         g.name AS group_name
     FROM assignments a
     JOIN templates t ON a.template_id = t.id
-    JOIN customers c ON a.customer_id = c.id
+    JOIN vw_customers c ON a.customer_id = c.id
     JOIN `groups` g ON a.group_id = g.id
 	where a.is_active = 1;
 END ;;
@@ -681,7 +705,15 @@ CREATE DEFINER=`shaun`@`%` PROCEDURE `get_customer`(
     IN p_customer_id INT
 )
 BEGIN
-    SELECT * FROM customers WHERE id = p_customer_id;
+    SELECT 
+		c.id,
+		c.name,
+		c.service_level,
+		sl.name AS service_level_name, 
+		sl.priority as service_level_priority
+	FROM vw_customers c
+	LEFT JOIN customer_service_levels sl on c.service_level = sl.id 
+	WHERE c.id = p_customer_id;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -700,7 +732,15 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`shaun`@`%` PROCEDURE `get_customers`()
 BEGIN
-    SELECT c.*, sl.name AS `service_level_name`, sl.priority as `service_level_priority` FROM customers c LEFT JOIN customer_service_levels sl on c.service_level = sl.id ORDER BY sl.priority, c.name;
+    SELECT 
+		c.id,
+		c.name,
+		c.service_level,
+		sl.name AS service_level_name, 
+		sl.priority as service_level_priority 
+	FROM vw_customers c 
+	LEFT JOIN customer_service_levels sl on c.service_level = sl.id 
+	ORDER BY sl.priority, c.name;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -722,7 +762,11 @@ CREATE DEFINER=`shaun`@`%` PROCEDURE `get_customer_assignments`(
 )
 BEGIN
     SELECT 
-        a.*,
+        a.id,
+		a.template_id,
+		a.customer_id,
+		a.schedule_id,
+		a.group_id,
         t.name AS template_name,
         g.name AS group_name,
         s.name AS schedule_name
@@ -732,6 +776,43 @@ BEGIN
     JOIN schedules s ON a.schedule_id = s.id
     WHERE a.customer_id = p_customer_id
 		AND a.is_active = 1;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `get_customer_tickets` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`shaun`@`%` PROCEDURE `get_customer_tickets`(
+    IN p_customer_id INT
+)
+BEGIN
+    SELECT 
+        t.id,
+		t.title,
+		t.status,
+		t.TechnicianID,
+		t.LastTechnicianCommentTimestamp,
+		c.id as customer_id,
+		c.name as customer_name,
+		c.service_level,
+		'' as service_level_name,
+		99 as service_levels_priority
+    FROM atera.tickets t
+    JOIN vw_customers c ON c.atera_id = t.customerID
+    WHERE c.atera_id = p_customer_id
+		AND t.status not in ('Deleted','Spam', 'Merged')
+		AND t.status not in ('Resolved', 'Closed')
+			OR DATE(t.LastTechnicianCommentTimestamp) = CURRENT_DATE();
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -750,7 +831,12 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`shaun`@`%` PROCEDURE `get_groups`()
 BEGIN
-    SELECT * FROM `groups` ORDER BY name;
+    SELECT 
+		id,
+		name
+	FROM `groups` 
+	WHERE is_active = 1
+	ORDER BY name;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -769,7 +855,17 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`shaun`@`%` PROCEDURE `get_schedules`()
 BEGIN
-    SELECT * FROM schedules where is_active = 1 ORDER BY name;
+    SELECT 
+		id,
+		name,
+		frequency,
+		interval_value,
+		day_of_week,
+		day_of_month,
+		month_of_year
+	FROM schedules 
+	WHERE is_active = 1 
+	ORDER BY name;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -791,10 +887,18 @@ CREATE DEFINER=`shaun`@`%` PROCEDURE `get_task`(
 )
 BEGIN
     SELECT 
-        t.*,
+        t.id,
+        t.assignments_id,
+        t.customer_id,
+        t.template_id,
+        t.name,
+        t.description,
+        t.group_id,
+        t.due_date,
+        t.status_id,
         c.name AS customer_name
     FROM tasks t
-    JOIN customers c ON t.customer_id = c.id
+    JOIN vw_customers c ON t.customer_id = c.id
     WHERE t.id = p_task_id;
 END ;;
 DELIMITER ;
@@ -815,11 +919,19 @@ DELIMITER ;;
 CREATE DEFINER=`shaun`@`%` PROCEDURE `get_tasks`()
 BEGIN
     SELECT 
-        t.*,
+        t.id,
+        t.assignments_id,
+        t.customer_id,
+        t.template_id,
+        t.name,
+        t.description,
+        t.group_id,
+        t.due_date,
+        t.status_id,
         c.name AS customer_name,
         s.name AS status_name
     FROM tasks t
-    JOIN customers c ON t.customer_id = c.id
+    JOIN vw_customers c ON t.customer_id = c.id
     JOIN task_statuses s ON t.status_id = s.id;
 END ;;
 DELIMITER ;
@@ -841,7 +953,16 @@ CREATE DEFINER=`shaun`@`%` PROCEDURE `get_task_steps`(
     IN p_task_id INT
 )
 BEGIN
-    SELECT *
+    SELECT 
+		id,
+		task_id,
+		step_order,
+		title,
+		description,
+		is_completed,
+		completed_by,
+		completed_at,
+		notes
     FROM task_steps
     WHERE task_id = p_task_id
     ORDER BY step_order ASC;
@@ -863,7 +984,13 @@ DELIMITER ;
 DELIMITER ;;
 CREATE DEFINER=`shaun`@`%` PROCEDURE `get_templates`()
 BEGIN
-    SELECT * FROM templates WHERE is_active = 1 ORDER BY name;
+    SELECT 
+		id,
+		name,
+		description
+	FROM templates 
+	WHERE is_active = 1 
+	ORDER BY name;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -884,12 +1011,56 @@ CREATE DEFINER=`shaun`@`%` PROCEDURE `get_template`(
     IN p_template_id INT
 )
 BEGIN
-    SELECT * FROM templates WHERE id = p_template_id;
+    SELECT 
+		id,
+		name,
+		description
+	FROM templates
+	WHERE id = p_template_id;
 
-    SELECT *
+    SELECT 
+		id,
+		template_id,
+		step_order,
+		title,
+		description
     FROM template_steps
     WHERE template_id = p_template_id
     ORDER BY step_order ASC;
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `get_tickets` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`shaun`@`%` PROCEDURE `get_tickets`()
+BEGIN
+    SELECT 
+        t.id,
+		t.title,
+		t.status,
+		t.TechnicianID,
+		t.LastTechnicianCommentTimestamp,
+		c.id as customer_id,
+		c.name as customer_name,
+		c.service_level,
+		'' as service_level_name,
+		99 as service_levels_priority
+    FROM atera.tickets t
+    JOIN vw_customers c ON c.atera_id = t.customerID
+    WHERE t.status not in ('Deleted','Spam', 'Merged')
+		AND t.status not in ('Resolved', 'Closed')
+			OR DATE(t.LastTechnicianCommentTimestamp) = CURRENT_DATE();
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -966,6 +1137,7 @@ CREATE DEFINER=`shaun`@`%` PROCEDURE `update_schedule`(
     IN p_interval INT,
     IN p_day_of_week VARCHAR(50),
     IN p_day_of_month INT,
+	IN p_month_of_year INT,
     IN p_user_id INT
 )
 BEGIN
@@ -975,7 +1147,8 @@ BEGIN
 						'frequency', frequency,
 						'interval_value', interval_value,
 						'day_of_week', day_of_week,
-						'day_of_month', day_of_month) INTO v_before FROM schedules WHERE id = p_id;
+						'day_of_month', day_of_month,
+						'month_of_year', month_of_year) INTO v_before FROM schedules WHERE id = p_id;
 
     UPDATE schedules
     SET name = p_name,
@@ -983,6 +1156,7 @@ BEGIN
         interval_value = p_interval,
         day_of_week = p_day_of_week,
         day_of_month = p_day_of_month,
+		month_of_year = p_month_of_year,
         modified_at = CURRENT_TIMESTAMP,
         modified_by = p_user_id
     WHERE id = p_id;
@@ -997,7 +1171,8 @@ BEGIN
 					'frequency', p_frequency,
 					'interval_value', p_interval,
 					'day_of_week', p_day_of_week,
-					'day_of_month', p_day_of_month)
+					'day_of_month', p_day_of_month,
+					'month_of_year', p_month_of_year)
     );
 END ;;
 DELIMITER ;
@@ -1244,6 +1419,29 @@ BEGIN
         JSON_OBJECT('title', p_title, 'description', IFNULL(p_description, ''))
     );
 END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP VIEW IF EXISTS `vw_customers` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE ALGORITHM=UNDEFINED DEFINER=`shaun`@`%` SQL SECURITY DEFINER VIEW `vw_customers` 
+AS 
+	SELECT 
+		`msp_checks`.`customers`.`id` AS `id`,
+		`msp_checks`.`customers`.`name` AS `name`,
+		0 AS `service_level`,
+		`msp_checks`.`customers`.`atera_id` AS `atera_id` 
+	FROM `msp_checks`.`customers`;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;

@@ -18,12 +18,13 @@ router.post('/', async (req, res) => {
 	
 	const { name, frequency, interval, day_of_week, day_of_month, start_date } = req.body;
 
-	await db.query(`CALL create_schedule(?, ?, ?, ?, ?, ?, ?)`, [
+	await db.query(`CALL create_schedule(?, ?, ?, ?, ?, ?, ?, ?)`, [
 		name.trim(),
 		frequency,
 		interval,
 		day_of_week,
 		day_of_month,
+		month_of_year,
 		start_date,
 		1
 	]);
@@ -38,13 +39,14 @@ router.put('/:id', async (req, res) => {
 		return res.status(400).json({success: false, error: errors.join(', ')});
 	}
 
-    await db.query(`CALL update_schedule(?, ?, ?, ?, ?, ?, ?)`, [
+    await db.query(`CALL update_schedule(?, ?, ?, ?, ?, ?, ?, ?)`, [
 		req.params.id,
 		name.trim(),
 		frequency,
 		interval,
 		day_of_week,
 		day_of_month,
+		month_of_year,
 		1
 	]);
 

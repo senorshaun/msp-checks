@@ -5,10 +5,10 @@ function initPage() {
         assignments: [],
         customers: [],
         templates: [],
-        schedules: []
+        schedules: [],
+		groups: []
     };
-	customers = flattenCustomers(customers);
-    initAssignmentActions();
+    initAssignmentActions(data);
 }
 
 function initAssignmentActions(data) {
@@ -32,40 +32,31 @@ function getAssignmentFormFields(data) {
             label: 'Customer',
             type: 'select',
             required: true,
-            options: flattenData(data.customers, 'customers').map(c => ({
-                label: c.name,
-                value: c.id
-            }))
+            options: flattenData(data.customers, 'customers'),
+			multiple: true,
+			grouped:true
+			
         },
         {
             name: 'template_id',
             label: 'Template',
             type: 'select',
             required: true,
-            options: data.templates.map(t => ({
-                label: t.name,
-                value: t.id
-            }))
+            options: data.templates
         },
         {
             name: 'schedule_id',
             label: 'Schedule',
             type: 'select',
             required: true,
-            options: data.schedules.map(s => ({
-                label: s.name,
-                value: s.id
-            }))
+            options: data.schedules
         },
         {
             name: 'group_id',
             label: 'Group',
             type: 'select',
             required: true,
-            options: data.groups.map(g => ({
-                label: g.name,
-                value: g.id
-            }))
+            options: data.groups
         }
     ];
 }

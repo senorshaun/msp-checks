@@ -7,32 +7,38 @@ function buildSearchableSelect({
     placeholder = 'Select...',
     valueField = 'id',
     labelField = 'name',
-    multiple = false
+    multiple = false,
+	grouped = false
 }) {
-	const groups = {};
-
-	data.forEach(item => {
-		const group = item.group || 'Other';
-		if (!groups[group]) groups[group] = [];
-		groups[group].push(item);
-	});
-
-
-
-	const itemsHtml = Object.entries(groups).map(([groupName, items]) => `
-		<div class="search-group">
-			<div class="search-group-label">${groupName}</div>
-			${items.map(item => `
-				<div 
-					class="search-item" 
-					data-value="${item[valueField]}"
-					data-group="${groupName}"
-				>
-					${item[labelField]}
-				</div>
-			`).join('')}
-		</div>
-	`).join('');
+	let itemsHtml;
+	if (grouped) {
+		const groups = {};
+		data.forEach(item => {
+			const group = item.group || 'Other';
+			if (!groups[group]) groups[group] = [];
+			groups[group].push(item);
+		});
+		itemsHtml = Object.entries(groups).map(([groupName, items]) => `
+			<div class="search-group">
+				<div class="search-group-label">${groupName}</div>
+				${items.map(item => `
+					<div 
+						class="search-item" 
+						data-value="${item[valueField]}"
+						data-group="${groupName}"
+					>
+						${item[labelField]}
+					</div>
+				`).join('')}
+			</div>
+		`).join('');
+	} else {
+		itemsHtml = data.map(item => `
+			<div class="search-item" data-value="${item[valueField]}">
+				${item[labelField]}
+			</div>
+		`).join('');
+	}
 
     return `
         <div class="searchable-select ${multiple ? 'multi' : ''}" data-name="${name}">
@@ -110,7 +116,8 @@ function flattenData(data, level1Name) {
             wrapper.dispatchEvent(new CustomEvent('change', {
                 detail: {
                     value: isMulti ? [...selectedValues] : hidden?.value || null
-                }
+                },
+				bubbles: true
             }));
         }
 
@@ -259,8 +266,12 @@ function flattenData(data, level1Name) {
 
         /* ---------------- PUBLIC API ---------------- */
 
-        wrapper.getValue = () => hidden?.value || null;
-        wrapper.getValues = () => [...selectedValues];
+        wrapper.getValues = () => {
+			if (!isMulti) {
+				return hidden?.value ? [hidden.value] : [];
+			}
+			return [...selectedValues];
+		};
 
         wrapper.setValue = (value) => {
             const item = getItems().find(i => i.dataset.value == value);
@@ -286,17 +297,6 @@ function flattenData(data, level1Name) {
     };
 
 })();
-
-function flattenCustomers(serviceLevels) {
-  return serviceLevels.flatMap(level =>
-    level.customers.map(customer => ({
-      id: customer.id,
-      name: customer.name,
-      serviceLevel: level.name,
-      priority: level.priority
-    }))
-  );
-}
 
 if (!window.__SEARCH_SELECT_GLOBAL__) {
     document.addEventListener('click', (e) => {

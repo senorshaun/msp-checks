@@ -23,7 +23,9 @@ router.get('/:id', async (req, res) => {
 	const [groups] = await db.query(`CALL get_groups()`);
 	const [schedules] = await db.query(`CALL get_schedules()`);
 	const [customers] = await db.query(`CALL get_customers()`);
-	const customerArray = req.helpers.buildCustomerResponse(customers[0]);
+	const customerArray = req.normalize.buildCustomerResponse(customers[0]);
+	const [tickets] = await db.query(`CALL get_customer_tickets(?)`, [req.params.id]);
+	const ticketsArray = tickets[0].map(t => req.normalize.normalizeTicket(t));
 
 	res.render('customer', {
 		customer: customerRows[0][0],
@@ -31,7 +33,8 @@ router.get('/:id', async (req, res) => {
 		templates: templates[0],
 		groups: groups[0],
 		schedules: schedules[0],
-		customers: customerArray
+		customers: customerArray,
+		tickets: ticketsArray
 	});
 });
 

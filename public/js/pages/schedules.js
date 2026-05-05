@@ -25,10 +25,11 @@ function initScheduleActions() {
 function getScheduleFormFields() {
     return [
 		{ name: 'name', label: 'Name', type: 'text', required: true },
-		{ name: 'frequency', label: 'Frequency', type: 'select', options: ['daily','weekly','monthly'], required: true },
+		{ name: 'frequency', label: 'Frequency', type: 'select', options: [{name: 'daily', id: 'daily'}, {name: 'weekly', id: 'weekly'}, {name: 'monthly', id: 'monthly'}, {name: 'yearly', id: 'yearly'}], required: true },
 		{ name: 'interval', label: 'Interval', type: 'number', required: true, min: 1, default: 1 },
-		{ name: 'day_of_week', label: 'Day of Week', type: 'number', showIf: (data) => data.frequency === 'weekly' },
-		{ name: 'day_of_month', label: 'Day of Month', type: 'number', showIf: (data) => data.frequency === 'monthly' }
+		{ name: 'day_of_week', label: 'Day of Week', type: 'text', placeholder: 'mon,tue,wed,...', showIf: (data) => data.frequency === 'weekly' },
+		{ name: 'day_of_month', label: 'Day of Month', type: 'number', placeholder: 1, showIf: (data) => data.frequency === 'monthly' || data.frequency === 'yearly' },
+		{ name: 'month_of_year', label: 'Month of Year', type: 'number', placeholder: 1, showIf: (data) => data.frequency === 'yearly' }
 	];
 }
 

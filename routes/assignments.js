@@ -3,16 +3,16 @@ const router = express.Router();
 const db = require('../db');
 
 router.get('/', async (req, res) => {
-    const [assignments] = await db.query(`CALL get_all_assignments()`);
+    const [assignments] = await db.query(`CALL get_assignments()`);
 	const [customers] = await db.query(`CALL get_customers()`);
 	const [templates] = await db.query(`CALL get_templates()`);
 	const [schedules] = await db.query(`CALL get_schedules()`);
 	const [groups] = await db.query(`CALL get_groups()`);
-	const customerArray = req.helpers.buildCustomerResponse(customers[0]);
+	const customersArray = req.normalize.buildCustomerResponse(customers[0]);
 
 	res.render('assignments', {
 		assignments: assignments[0],
-		customers: customerArray,
+		customers: customersArray,
 		templates: templates[0],
 		schedules: schedules[0],
 		groups: groups[0]
