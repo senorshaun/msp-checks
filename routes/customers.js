@@ -84,11 +84,12 @@ router.post('/:id/copy-assignments', async (req, res) => {
         const a = map[id];
         if (!a) continue;
 
-        await db.query(`CALL assign_template(?, ?, ?, ?)`, [
+        await db.query(`CALL create_assignment(?, ?, ?, ?, ?)`, [
             a.template_id,
             targetCustomerId,
             a.schedule_id,
-            a.group_id
+            a.group_id,
+			req.userId
         ]);
     }
 
@@ -99,7 +100,7 @@ router.post('/update-group', async (req, res) => {
     await db.query(`CALL update_assignments_group(?, ?, ?)`, [
 		req.body.assignment_id,
 		req.body.group_id,
-		1
+		req.userId
 	]);
 
     res.status(200).json({ success: true });

@@ -37,7 +37,7 @@ router.post('/', async (req, res) => {
             customerId,
             schedule_id,
             group_id || null,
-			1
+			req.userId
         ]);
     }
     const redirect_url = (customers.length == 1)
@@ -54,7 +54,7 @@ router.put('/:id', async (req, res) => {
 		req.params.id,
 		schedule_id || null,
 		group_id || null,
-		1
+		req.userId
 	]);
     res.status(200).json({ success: true });
 });
@@ -62,7 +62,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
 	await db.query(`CALL delete_assignment(?, ?)`, [
 		req.params.id,
-		1
+		req.userId
 	]);
     res.status(200).json({ success: true });
 });

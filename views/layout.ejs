@@ -2,7 +2,6 @@
 <html>
 <head>
     <title>Elite Task Manager</title>
-
     <link rel="stylesheet" href="/css/app.css">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 
@@ -10,7 +9,10 @@
 
 <body>
 <div class="sidebar">
-    <h2>Elite Operations</h2>
+    <div class="d-flex gap-2">
+		<h2>Elite Operations</h2>
+		<button class="btn btn-secondary" id="logoutBtn" style="display: none">Logout</button>
+	</div>
 
     <a href="/">Dashboard</a>
     <a href="/customers">Customer</a>
@@ -29,6 +31,11 @@
 <script src="/js/app.js"></script>
 <script src="/js/components/searchable-select.js"></script>
 <script src="/js/components/form-utils.js"></script>
+<script type="text/javascript">
+    document.getElementById("logoutBtn").addEventListener('click', () => {
+        window.location.href = "/auth/logout";
+    });
+</script>
 
 <!-- PAGE SCRIPTS -->
 <%- scripts || '' %>

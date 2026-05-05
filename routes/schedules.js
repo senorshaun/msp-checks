@@ -26,7 +26,7 @@ router.post('/', async (req, res) => {
 		day_of_month,
 		month_of_year,
 		start_date,
-		1
+		req.userId
 	]);
 
     res.status(200).json({ succcess: true, redirect: '/schedules' });
@@ -47,7 +47,7 @@ router.put('/:id', async (req, res) => {
 		day_of_week,
 		day_of_month,
 		month_of_year,
-		1
+		req.userId
 	]);
 
     res.status(200).json({ success: true });
@@ -56,7 +56,7 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     await db.query(`CALL delete_schedule(?, ?)`, [
 		req.params.id,
-		1
+		req.userId
 	]);
 
     res.status(200).json({ success: true });

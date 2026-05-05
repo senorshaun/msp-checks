@@ -182,44 +182,61 @@ function getFilteredItems() {
 /* ---------------- CALENDAR ---------------- */
 function getWeekDates(baseDate = new Date()) {
     const start = new Date(baseDate);
-    start.setDate(start.getDate() - start.getDay() + 1); // Monday
+    start.setDate(start.getDate() - start.getDay() + 1);
 
-    return Array.from({ length: 5 }).map((_, i) => {
+    return Array.from({ length: 7 }).map((_, i) => {
         const d = new Date(start);
         d.setDate(start.getDate() + i);
         return d;
     });
 }
+
+function getRollingWeekDates(baseDate = new Date()) {
+    const start = new Date(baseDate);
+
+    return Array.from({ length: 7 }).map((_, i) => {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        return d;
+    });
+}
+
+function orderWeekDates(weekDates) {
+    const today = new Date().toDateString();
+
+    const idx = weekDates.findIndex(
+        d => d.toDateString() === today
+    );
+
+    if (idx === -1) return weekDates;
+
+    return [
+        ...weekDates.slice(idx),
+        ...weekDates.slice(0, idx)
+    ];
+}
+
+
 function groupItems(items) {
     const now = new Date();
     const weekDates = getWeekDates(appState.ui.currentWeekStart);
     const buckets = {
         pastDue: [],
-        days: {}, // Mon-Fri
-        saturday: [],
-        sunday: []
+        days: {}
     };
     weekDates.forEach(d => {
-        const key = d.toDateString();
-        buckets.days[key] = [];
-    });
+		buckets.days[d.toDateString()] = [];
+	});
     items.forEach(t => {
         const due = new Date(t.due_date);
         if (due < now && t.status_name !== 'complete') {
             buckets.pastDue.push(t);
             return;
         }
-        const day = due.getDay();
-        if (day === 6) {
-            buckets.saturday.push(t);
-        } else if (day === 0) {
-            buckets.sunday.push(t);
-        } else {
-            const key = new Date(due).toDateString();
-            if (buckets.days[key]) {
-                buckets.days[key].push(t);
-            }
-        }
+        const key = new Date(due).toDateString();
+		if (buckets.days[key]) {
+			buckets.days[key].push(t);
+		}
     });
     return buckets;
 }
@@ -228,21 +245,70 @@ function renderBoard() {
     const container = document.getElementById('boardView');
     const filtered = getFilteredItems();
     const buckets = groupItems(filtered);
-    const weekDates = getWeekDates(appState.ui.currentWeekStart);
-    renderWeekLabel(weekDates);
-    const columns = [
-        renderPastDueColumn(buckets.pastDue),
-        ...weekDates.map(d =>
-            renderDayColumn(d, buckets.days[d.toDateString()])
-        ),
-        renderWeekendColumn(buckets.saturday, buckets.sunday)
-    ];
+	let weekDates;
+	let ordered;
+	if (isCurrentWeek(appState.ui.currentWeekStart)) {
+		ordered = getRollingWeekDates(new Date());
+		weekDates = ordered;
+	} else {
+		weekDates = getWeekDates(appState.ui.currentWeekStart);
+		ordered = weekDates;
+	}
+	renderDateLabel(weekDates);
+	const columns = [
+		renderPastDueColumn(buckets.pastDue),
+		...buildColumns(ordered, buckets.days)
+	];
     container.innerHTML = columns.join('');
 }
 
-function renderWeekLabel(weekDates) {
-    document.getElementById('weekLabel').innerText =
-        `${weekDates[0].toLocaleDateString()} - ${weekDates[4].toLocaleDateString()}`;
+function renderDateLabel(dates) {
+    const start = dates[0];
+    const end = dates[dates.length - 1];
+
+    document.getElementById('dateLabel').innerText = `${start.toLocaleDateString()} - ${end.toLocaleDateString()}`;
+}
+
+function buildColumns(orderedDates, dayBuckets) {
+    const cols = [];
+    for (let i = 0; i < orderedDates.length; i++) {
+        const d = orderedDates[i];
+        const day = d.getDay();
+        if (day === 6) {
+            const satKey = d.toDateString();
+
+            const next = orderedDates[i + 1];
+            let sunItems = [];
+
+            if (next && next.getDay() === 0) {
+                sunItems = dayBuckets[next.toDateString()] || [];
+                i++; // skip Sunday
+            }
+            cols.push(
+                renderWeekendColumn(
+                    dayBuckets[satKey] || [],
+                    sunItems
+                )
+            );
+        }
+        else if (day === 0) {
+            cols.push(
+                renderWeekendColumn(
+                    [],
+                    dayBuckets[d.toDateString()] || []
+                )
+            );
+        }
+        else {
+            cols.push(
+                renderDayColumn(
+                    d,
+                    dayBuckets[d.toDateString()] || []
+                )
+            );
+        }
+    }
+    return cols;
 }
 
 function renderPastDueColumn(items) {
@@ -287,24 +353,29 @@ function renderColumn(title, items) {
 }
 
 function getMonday(d) {
-    const date = new Date(d);
-    const day = date.getDay();
-    const diff = date.getDate() - day + (day === 0 ? -6 : 1);
-    return new Date(date.setDate(diff));
+	const date = new Date(d);
+	const day = date.getDay();
+	const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+	return new Date(date.setDate(diff));
+}
+
+function isCurrentWeek(weekStart) {
+    const thisMonday = getMonday(new Date()).toDateString();
+    return new Date(weekStart).toDateString() === thisMonday;
 }
 
 function changeWeek(offset) {
-	setState(state => {
-        state.ui.currentWeekStart.setDate(state.ui.currentWeekStart.getDate() + (offset * 7));
+    setState(state => {
+        const newDate = new Date(state.ui.currentWeekStart);
+        newDate.setDate(newDate.getDate() + (offset * 7));
+        state.ui.currentWeekStart = newDate;
     });
-    renderBoard();
 }
 
 function resetWeek() {
     setState(state => {
-        state.ui.currentWeekStart.setDate(getMonday(new Date()));
+        state.ui.currentWeekStart = getMonday(new Date());
     });
-    renderBoard();
 }
 
 function sortItems(items) {

@@ -17,8 +17,6 @@ function normalizeTicket(ticket) {
     customer_id: ticket.customer_id,
     customer_name: ticket.customer_name,
     service_level_priority: ticket.customer_service_level_priority,
-
-    meta: ticket
   };
 }
 
@@ -42,8 +40,6 @@ function normalizeTask(ticket) {
     customer_id: task.customer_id,
     customer_name: task.customer_name,
     service_level_priority: task.service_level_priority,
-
-    meta: ticket
   };
 }
 

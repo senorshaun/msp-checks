@@ -454,25 +454,34 @@ DELIMITER ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
 CREATE DEFINER=`shaun`@`%` PROCEDURE `create_user`(
+    IN p_name VARCHAR(100),
     IN p_username VARCHAR(100),
-    IN p_email VARCHAR(255)
+	IN p_azure_oid VARCHAR(100)
 )
 BEGIN
     DECLARE v_user_id INT;
     DECLARE v_group_id INT;
 
-    INSERT INTO users (username, email)
-    VALUES (p_username, p_email);
+    INSERT INTO users (name, username, azure_oid)
+    VALUES (p_name, p_username, p_azure_oid);
 
     SET v_user_id = LAST_INSERT_ID();
 
     INSERT INTO `groups` (name)
-    VALUES (p_username);
+    VALUES (p_name);
 
     SET v_group_id = LAST_INSERT_ID();
 
     INSERT INTO group_membership (user_id, group_id)
-    VALUES (v_user_id, v_group_id);
+    VALUES (v_user_id, 1), (v_user_id, v_group_id);
+	
+	SELECT 
+        id,
+		name,
+		username,
+		azure_oid
+    FROM users
+	WHERE azure_oid = p_azure_oid;
 
 END ;;
 DELIMITER ;
@@ -800,7 +809,7 @@ BEGIN
         t.id,
 		t.title,
 		t.status,
-		t.TechnicianID,
+		IFNULL(u.name, t.TechnicianEmail) as technician,
 		t.LastTechnicianCommentTimestamp,
 		c.id as customer_id,
 		c.name as customer_name,
@@ -809,6 +818,7 @@ BEGIN
 		99 as service_levels_priority
     FROM atera.tickets t
     JOIN vw_customers c ON c.atera_id = t.customerID
+	LEFT JOIN users u on t.TechnicianEmail = u.username
     WHERE c.atera_id = p_customer_id
 		AND t.status not in ('Deleted','Spam', 'Merged')
 		AND t.status not in ('Resolved', 'Closed')
@@ -916,7 +926,9 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`shaun`@`%` PROCEDURE `get_tasks`()
+CREATE DEFINER=`shaun`@`%` PROCEDURE `get_tasks`(
+	in p_user_id INT
+)
 BEGIN
     SELECT 
         t.id,
@@ -932,7 +944,10 @@ BEGIN
         s.name AS status_name
     FROM tasks t
     JOIN vw_customers c ON t.customer_id = c.id
-    JOIN task_statuses s ON t.status_id = s.id;
+    JOIN task_statuses s ON t.status_id = s.id
+	JOIN `groups` g on t.group_id = g.id
+	JOIN group_membership gm on gm.group_id = g.id
+	WHERE `gm`.`user_id` = p_user_id;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;
@@ -1043,13 +1058,14 @@ DELIMITER ;
 /*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
 /*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
 DELIMITER ;;
-CREATE DEFINER=`shaun`@`%` PROCEDURE `get_tickets`()
+CREATE DEFINER=`shaun`@`%` PROCEDURE `get_tickets`(
+	IN p_user_id INT
+)
 BEGIN
     SELECT 
         t.id,
 		t.title,
 		t.status,
-		t.TechnicianID,
 		t.LastTechnicianCommentTimestamp,
 		c.id as customer_id,
 		c.name as customer_name,
@@ -1058,9 +1074,37 @@ BEGIN
 		99 as service_levels_priority
     FROM atera.tickets t
     JOIN vw_customers c ON c.atera_id = t.customerID
-    WHERE t.status not in ('Deleted','Spam', 'Merged')
+	JOIN users u on t.TechnicianEmail = u.username
+    WHERE u.id = p_user_id
+		AND t.status not in ('Deleted','Spam', 'Merged')
 		AND t.status not in ('Resolved', 'Closed')
 			OR DATE(t.LastTechnicianCommentTimestamp) = CURRENT_DATE();
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `get_user_by_oid` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`shaun`@`%` PROCEDURE `get_user_by_oid`(
+	in inAzureOID varchar(100))
+BEGIN
+    SELECT 
+        id,
+		name,
+		username,
+		azure_oid
+    FROM users
+	WHERE azure_oid = inAzureOID;
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;

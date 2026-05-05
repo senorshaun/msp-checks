@@ -26,12 +26,14 @@ DROP TABLE IF EXISTS `users`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `users` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(100) NOT NULL,
-  `email` varchar(255) DEFAULT NULL,
+  `name` varchar(100) DEFAULT NULL,
+  `username` varchar(100) DEFAULT NULL,
+  `azure_oid` varchar(100) DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT 1,
   `modified_at` datetime DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`)
+  UNIQUE KEY `username` (`username`),
+  UNIQUE KEY `azure_oid` (`azure_oid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 

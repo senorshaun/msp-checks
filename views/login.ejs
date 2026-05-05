@@ -1,0 +1,26 @@
+<div class="text-center mb-4"> 
+	<h5 class="mb-1">Sign in</h5> 
+	<small class="text-muted">Use your Microsoft account</small> 
+</div> 
+<div class="d-flex align-items-center justify-content-center">
+	<div class="card shadow-sm p-4 rounded-3 align-items-center justify-content-center" style="max-width:280px">
+		<a href="/auth/login" class="btn btn-light border d-flex align-items-center justify-content-center gap-2 py-2"> 
+			<span style="display:grid;grid-template-columns:repeat(2,8px);grid-template-rows:repeat(2,8px);gap:2px;"> 
+				<span style="background:#f25022;"></span> 
+				<span style="background:#7fba00;"></span> 
+				<span style="background:#00a4ef;"></span> 
+				<span style="background:#ffb900;"></span> 
+			</span> 
+			<span>Sign in with Microsoft</span> 
+		</a>
+	</div>
+</div>
+
+<script>
+  document.querySelector('a[href="/auth/login"]').addEventListener('click', function () {
+    this.innerHTML = 'Redirecting...';
+  });
+</script>
+
+</script>
+<% scripts = `` %>

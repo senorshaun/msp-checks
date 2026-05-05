@@ -26,7 +26,7 @@ router.post('/', async (req, res) => {
 		const [rows] = await db.query(`CALL create_template(?, ?, ?)`, [
 			req.body.name.trim(),
 			req.body.description.trim(),
-			1
+			req.userId
 		]);
 		const templateId = rows[0][0].template_id;
 		res.status(200).json({ success: true, redirect: `/templates/${templateId}` });
@@ -62,14 +62,14 @@ router.put('/:id', async (req, res) => {
 			req.params.id,
 			req.body.name.trim(),
 			req.body.description.trim() || null,
-			1
+			req.userId
 		]);
 
 	res.status(200).json({ success: true });
 });
 
 router.delete('/:id', async (req, res) => {
-    const [results] = await db.query(`CALL delete_template(?, ?)`, [req.params.id, 1]);
+    const [results] = await db.query(`CALL delete_template(?, ?)`, [req.params.id, req.userId]);
     res.status(200).json({ success: true });
 });
 
@@ -83,7 +83,7 @@ router.post('/:id/steps', async (req, res) => {
 		req.params.id,
 		req.body.title.trim(),
 		req.body.description.trim() || null,
-		1
+		req.userId
 	]);
 	
 	const newId = rows?.[0]?.[0]?.id;
@@ -115,7 +115,7 @@ router.put('/:templateid/steps/:stepid', async (req, res) => {
 		req.params.stepid,
 		req.body.title.trim(),
 		req.body.description.trim() || null,
-		1
+		req.userId
 	]);
 
     res.status(200).json({ success: true });
@@ -124,7 +124,7 @@ router.put('/:templateid/steps/:stepid', async (req, res) => {
 router.delete('/:templateid/steps/:id', async (req, res) => {
 	await db.query(`CALL delete_template_step(?, ?)`, [
 		req.params.id,
-		1
+		req.userId
 	]);
 
     res.status(200).json({ success: true });
@@ -135,7 +135,7 @@ router.post('/:templateid/steps/reorder', async (req, res) => {
     await db.query(`CALL reorder_template_steps(?, ?, ?)`, [
 		req.params.id,
 		req.body.orderedIds.join(','),
-		1
+		req.userId
 	]);
 
     res.status(200).json({ success: true });
