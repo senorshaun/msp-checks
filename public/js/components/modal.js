@@ -4,9 +4,6 @@ const Modal = (() => {
     function init() {
         modal = document.getElementById('globalModal');
         content = document.getElementById('globalModalContent');
-		content.addEventListener('click', (e) => {
-			e.stopPropagation();
-		});
 		modal.addEventListener('click', (e) => {
 			if (e.target === modal) close();
 		});
@@ -14,20 +11,23 @@ const Modal = (() => {
 
     function open(input, onOpen) {
 		content.innerHTML = '';
+
+		let node = null;
+
 		if (typeof input === 'function') {
-			input = input();
+			node = input();                 // get returned DOM node
 		} else if (typeof input === 'string') {
 			content.innerHTML = input;
 		} else if (input instanceof Node) {
-			content.appendChild(input);
-		} else {
-			content.innerHTML = input;
+			node = input;
+		}
+		if (node) {
+			content.appendChild(node);
 		}
 		modal.classList.remove('hidden');
+
 		if (onOpen) {
-			requestAnimationFrame(() => {
-				onOpen();
-			});
+			requestAnimationFrame(onOpen);
 		}
 	}
 

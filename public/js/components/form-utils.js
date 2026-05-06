@@ -1,3 +1,10 @@
+function el(tag, className, text) {
+    const e = document.createElement(tag);
+    if (className) e.className = className;
+    if (text !== undefined) e.innerText = text;
+    return e;
+}
+
 function openFormModal({
     title,
     description,
@@ -46,7 +53,7 @@ function openFormModal({
             return wrapper;
         },
         () => {
-            const form = formRef;
+            const form = document.getElementById(formId);
 
 			if (!form) {
 				console.error('Form not found after modal render');
