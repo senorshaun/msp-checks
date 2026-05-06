@@ -1,6 +1,3 @@
-/* =========================================
-   HTML BUILDER (unchanged conceptually)
-========================================= */
 function buildSearchableSelect({
     name,
     data,
@@ -8,52 +5,80 @@ function buildSearchableSelect({
     valueField = 'id',
     labelField = 'name',
     multiple = false,
-	grouped = false
+    grouped = false
 }) {
-	let itemsHtml;
-	if (grouped) {
-		const groups = {};
-		data.forEach(item => {
-			const group = item.group || 'Other';
-			if (!groups[group]) groups[group] = [];
-			groups[group].push(item);
-		});
-		itemsHtml = Object.entries(groups).map(([groupName, items]) => `
-			<div class="search-group">
-				<div class="search-group-label">${groupName}</div>
-				${items.map(item => `
-					<div 
-						class="search-item" 
-						data-value="${item[valueField]}"
-						data-group="${groupName}"
-					>
-						${item[labelField]}
-					</div>
-				`).join('')}
-			</div>
-		`).join('');
-	} else {
-		itemsHtml = data.map(item => `
-			<div class="search-item" data-value="${item[valueField]}">
-				${item[labelField]}
-			</div>
-		`).join('');
-	}
+    const wrapper = document.createElement('div');
+    wrapper.className = `searchable-select ${multiple ? 'multi' : ''}`;
+    wrapper.dataset.name = name;
 
-    return `
-        <div class="searchable-select ${multiple ? 'multi' : ''}" data-name="${name}">
-            <input type="text" class="search-input" placeholder="${placeholder}">
-            ${
-                multiple
-                ? `<div class="multi-values"></div>`
-                : `<input type="hidden" name="${name}">`
-            }
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'search-input';
+    input.placeholder = placeholder;
 
-            <div class="search-list" style="display:none;">
-                ${itemsHtml}
-            </div>
-        </div>
-    `;
+    wrapper.appendChild(input);
+
+    if (multiple) {
+        const multi = document.createElement('div');
+        multi.className = 'multi-values';
+        wrapper.appendChild(multi);
+    } else {
+        const hidden = document.createElement('input');
+        hidden.type = 'hidden';
+        hidden.name = name;
+        wrapper.appendChild(hidden);
+    }
+
+    const list = document.createElement('div');
+    list.className = 'search-list';
+    list.style.display = 'none';
+
+    if (grouped) {
+        const groups = {};
+
+        data.forEach(item => {
+            const group = item.group || 'Other';
+            if (!groups[group]) groups[group] = [];
+            groups[group].push(item);
+        });
+
+        Object.entries(groups).forEach(([groupName, items]) => {
+            const groupEl = document.createElement('div');
+            groupEl.className = 'search-group';
+
+            const label = document.createElement('div');
+            label.className = 'search-group-label';
+            label.innerText = groupName;
+
+            groupEl.appendChild(label);
+
+            items.forEach(item => {
+                const el = document.createElement('div');
+                el.className = 'search-item';
+                el.dataset.value = item[valueField];
+                el.dataset.group = groupName;
+                el.innerText = item[labelField];
+
+                groupEl.appendChild(el);
+            });
+
+            list.appendChild(groupEl);
+        });
+
+    } else {
+        data.forEach(item => {
+            const el = document.createElement('div');
+            el.className = 'search-item';
+            el.dataset.value = item[valueField];
+            el.innerText = item[labelField];
+
+            list.appendChild(el);
+        });
+    }
+
+    wrapper.appendChild(list);
+
+    return wrapper;
 }
 
 function flattenData(data, level1Name) {
@@ -87,7 +112,6 @@ function flattenData(data, level1Name) {
         let highlightedIndex = -1;
 
         /* ---------------- HELPERS ---------------- */
-
         function getItems() {
             return Array.from(list.querySelectorAll('.search-item'));
         }

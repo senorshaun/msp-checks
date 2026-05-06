@@ -257,6 +257,82 @@ DELIMITER ;
 /*!50003 SET character_set_client  = @saved_cs_client */ ;
 /*!50003 SET character_set_results = @saved_cs_results */ ;
 /*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `create_task` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`shaun`@`%` PROCEDURE `create_task`(
+    IN p_name varchar(255),
+	IN p_description text,
+	IN p_due_date DATETIME,
+	IN p_customer_id INT,
+	IN p_group_id INT,
+    IN p_user_id INT
+)
+BEGIN
+    DECLARE v_task_id INT;
+
+    INSERT INTO tasks (
+        customer_id,
+        name,
+		description,
+        group_id,
+        due_date,
+        status_id,
+        status_changed_at,
+        status_changed_by,
+        modified_at,
+        modified_by
+    )
+    VALUES (
+        p_customer_id,
+        p_name,
+		p_description,
+        p_group_id,
+        p_due_date,
+        (SELECT id FROM task_statuses WHERE name = 'open' LIMIT 1),
+        CURRENT_TIMESTAMP,
+        p_user_id,
+        CURRENT_TIMESTAMP,
+        p_user_id
+    );
+
+    SET v_task_id = LAST_INSERT_ID();
+
+    INSERT INTO task_steps (
+        task_id,
+        step_order,
+        title,
+        description
+    )
+    VALUES (
+        v_task_id,
+        1,
+        p_name,
+        p_description
+    );
+
+    CALL log_audit(
+        'task',
+        v_task_id,
+        'create',
+        p_user_id,
+        NULL,
+        JSON_OBJECT('type', 'manual', 'name', p_name, 'due_date', p_due_date, 'group_id', p_group_id, 'customer_id', p_customer_id)
+    );
+
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
 /*!50003 DROP PROCEDURE IF EXISTS `create_task_from_assignment_scheduled` */;
 /*!50003 SET @saved_cs_client      = @@character_set_client */ ;
 /*!50003 SET @saved_cs_results     = @@character_set_results */ ;
@@ -1218,6 +1294,67 @@ BEGIN
 					'day_of_month', p_day_of_month,
 					'month_of_year', p_month_of_year)
     );
+END ;;
+DELIMITER ;
+/*!50003 SET sql_mode              = @saved_sql_mode */ ;
+/*!50003 SET character_set_client  = @saved_cs_client */ ;
+/*!50003 SET character_set_results = @saved_cs_results */ ;
+/*!50003 SET collation_connection  = @saved_col_connection */ ;
+/*!50003 DROP PROCEDURE IF EXISTS `update_task` */;
+/*!50003 SET @saved_cs_client      = @@character_set_client */ ;
+/*!50003 SET @saved_cs_results     = @@character_set_results */ ;
+/*!50003 SET @saved_col_connection = @@collation_connection */ ;
+/*!50003 SET character_set_client  = utf8mb4 */ ;
+/*!50003 SET character_set_results = utf8mb4 */ ;
+/*!50003 SET collation_connection  = utf8mb4_general_ci */ ;
+/*!50003 SET @saved_sql_mode       = @@sql_mode */ ;
+/*!50003 SET sql_mode              = 'STRICT_TRANS_TABLES,ERROR_FOR_DIVISION_BY_ZERO,NO_AUTO_CREATE_USER,NO_ENGINE_SUBSTITUTION' */ ;
+DELIMITER ;;
+CREATE DEFINER=`shaun`@`%` PROCEDURE `update_task`(
+	IN p_task_id INT,
+    IN p_name varchar(255),
+	IN p_description text,
+	IN p_due_date DATETIME,
+	IN p_customer_id INT,
+	IN p_group_id INT,
+    IN p_user_id INT
+)
+BEGIN
+    DECLARE v_before JSON;
+	
+	SELECT JSON_OBJECT(
+        'customer_id', customer_id, 'name', name, 'description', description, 'group_id', group_id, 'due_date', due_date
+    )
+    INTO v_before
+    FROM tasks
+    WHERE id = p_task_id;
+
+    UPDATE tasks
+	SET
+        customer_id = IFNULL(p_customer_id, customer_id),
+        name = p_name,
+		description = IFNULL(p_description, description),
+        group_id = IFNULL(p_group_id, group_id),
+        due_date = IFNULL(p_due_date, due_date),
+        modified_at = CURRENT_TIMESTAMP,
+        modified_by = p_user_id
+    WHERE id = p_task_id;
+
+    UPDATE task_steps
+	SET
+        title = p_name,
+        description = IFNULL(p_description, description)
+    WHERE task_id = p_task_id;
+
+    CALL log_audit(
+        'task',
+        p_task_id,
+        'update',
+        p_user_id,
+        NULL,
+        JSON_OBJECT('name', p_name, 'due_date', p_due_date, 'group_id', p_group_id, 'customer_id', p_customer_id)
+    );
+
 END ;;
 DELIMITER ;
 /*!50003 SET sql_mode              = @saved_sql_mode */ ;

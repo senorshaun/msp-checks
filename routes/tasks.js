@@ -5,6 +5,7 @@ const db = require('../db');
 router.get('/', async (req, res) => {
     const [tasks] = await db.query(`CALL get_tasks(?)`,[req.userId]);
 	const [customers] = await db.query(`CALL get_customers()`);
+	const [groups] = await db.query(`CALL get_groups()`);
 	const customerArray = req.normalize.buildCustomerResponse(customers[0]);
 	const [tickets] =  await db.query(`CALL get_tickets(?)`,[req.userId]);
 	const items = [
@@ -14,8 +15,28 @@ router.get('/', async (req, res) => {
 
 	res.render('dashboard', {
 		items: items,
-		customers: customerArray
+		customers: customerArray,
+		groups: groups[0]
 	});
+});
+
+router.post('/task', async (req, res) => {
+	const { name, description, due_date, customer_id, group_id } = req.body;
+	const errors = req.helpers.requireFields(req.body, ['name']);
+	if (errors.length) {
+		return res.status(400).json({success: false, error: errors.join(', ')});
+	}
+    await db.query(`
+        CALL create_task(?, ?, ?, ?, ?, ?)`, [
+			name,
+			description,
+			due_date,
+			customer_id,
+			group_id,
+			req.userId
+	]);
+
+    res.status(200).json({ success: true });
 });
 
 router.get('/task/:id', async (req, res) => {
@@ -29,6 +50,26 @@ router.get('/task/:id', async (req, res) => {
 			steps: steps[0]
 		}
 	});
+});
+
+router.put('/task/:id', async (req, res) => {
+	const { name, description, due_date, customer_id, group_id } = req.body;
+	const errors = req.helpers.requireFields(req.body, ['name']);
+	if (errors.length) {
+		return res.status(400).json({success: false, error: errors.join(', ')});
+	}
+    await db.query(`
+        CALL update_task(?, ?, ?, ?, ?, ?, ?)`, [
+			req.params.id,
+			name,
+			description,
+			due_date,
+			customer_id,
+			group_id,
+			req.userId
+	]);
+
+    res.status(200).json({ success: true });
 });
 
 router.post('/step/update', async (req, res) => {

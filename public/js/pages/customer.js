@@ -10,15 +10,15 @@ function initPage() {
 function initCustomerSwitcher() {
     const container = document.getElementById('customerSwitcherContainer');
 
-    container.innerHTML = buildSearchableSelect({
+    container.innerHTML = '';
+	container.appendChild(buildSearchableSelect({
         name: 'customerSwitcher',
         data: flattenData(data.customers, 'customers'),
         placeholder: 'Switch customer...',
 		grouped: true
-    });
-
+    }));
     const wrapper = container.querySelector('.searchable-select');
-    initSearchableSelect(wrapper);
+	initSearchableSelects();
     wrapper.setValue(data.customer.id);
     wrapper.addEventListener('change', (e) => {
         const id = e.detail.value;
@@ -33,13 +33,14 @@ function initGroupSelects() {
 
         const assignmentId = el.dataset.assignmentId;
         const currentGroup = el.dataset.currentGroup;
-        el.innerHTML = buildSearchableSelect({
+        el.innerHTML = '';
+		el.innerHTML.appendChild(buildSearchableSelect({
             name: `group_${assignmentId}`,
             data: data.groups,
             placeholder: 'Select group...'
-        });
+        }));
         const wrapper = el.querySelector('.searchable-select');
-        initSearchableSelect(wrapper);
+        initSearchableSelects();
         if (currentGroup) {
             wrapper.setValue(currentGroup);
         }

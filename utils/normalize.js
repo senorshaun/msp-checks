@@ -8,7 +8,7 @@ function normalizeTicket(ticket) {
   return {
     type: 'ticket',
     id: ticket.id,
-    title: ticket.title,
+    name: ticket.title,
     display: `Atera #${ticket.id} - ${ticket.title}`,
     status: ticket.status,
 
@@ -20,17 +20,17 @@ function normalizeTicket(ticket) {
   };
 }
 
-function normalizeTask(ticket) {
-  const completeStatuses = ['Completed', 'Skipped'];
+function normalizeTask(task) {
+  const completeStatuses = ['completed', 'skipped'];
 
   const isComplete = completeStatuses.includes(
-    (task.status_name || '')
+    (task.status || '')
   );
 
   return {
     type: 'task',
     id: task.id,
-    title: task.name,
+    name: task.name,
     display: `${task.name}`,
     status: task.status_name,
 

@@ -36,6 +36,7 @@
 			<button class="btn btn-sm btn-outline-secondary" onclick="changeWeek(-1)">←</button>
 			<button class="btn btn-sm btn-outline-secondary" onclick="resetWeek()">Today</button>
 			<button class="btn btn-sm btn-outline-secondary" onclick="changeWeek(1)">→</button>
+			<button class="btn btn-sm btn-outline-primary" onclick="openCreateTaskModal()">+ New Task</button>
 		</div>
 		<strong id="dateLabel"></strong>
 	</div>
@@ -50,7 +51,7 @@
     <div id="drawerMeta" class="text-muted"></div>
     <hr>
     <div id="drawerSteps"></div>
-    <button class="btn btn-success mt-3 w-100" onclick="completeTask()">
+    <button class="btn btn-primary mt-3 w-100" onclick="completeTask()">
         Complete Task
     </button>
 </div>
@@ -58,6 +59,7 @@
 <script>
     window.__DATA__ = <%- JSON.stringify({
 		customers,
+		groups,
         items
 	}) %>;
 </script>

@@ -21,6 +21,13 @@ function initTemplateActions(data) {
     });
 }
 
+function el(tag, className, text) {
+    const e = document.createElement(tag);
+    if (className) e.className = className;
+    if (text !== undefined) e.innerText = text;
+    return e;
+}
+
 function getTemplateFields() {
     return [
         { name: 'name', label: 'Name', type: 'text', required: true },
@@ -41,58 +48,109 @@ function openCreateTemplateModal() {
 
 async function openTemplateEditor(template) {
     const res = await api_fetch('GET', `/templates/${template.id}`, null);
-    renderTemplateEditor(template, res.steps || []);
+    openModal(
+		() => renderTemplateEditor(template, res.steps || []),
+		() => {
+			initDragAndDrop();
+			bindTemplateEditorEvents(template, res.steps || []);
+		}
+    );
 }
 
 function renderTemplateEditor(template, steps) {
-    const html = `
-        <h3 class="mb-2">Edit Template</h3>
+    const wrapper = el('div');
 
-        <div class="mb-3">
-            <div><strong>${template.name}</strong></div>
-            <div class="text-muted small">${template.description || ''}</div>
-        </div>
+    // Title
+    wrapper.appendChild(el('h3', 'mb-2', 'Edit Template'));
 
-        <div class="d-flex justify-content-between mb-2">
-            <div class="d-flex gap-2">
-                <button class="btn btn-primary btn-sm" id="saveOrderBtn">Save Order</button>
-                <button class="btn btn-primary btn-sm" id="addStepBtn">Add Step</button>
-            </div>
-        </div>
+    // Template info
+    const info = el('div', 'mb-3');
+    info.appendChild(el('div', null, template.name)).classList.add('fw-bold');
 
-        <div id="stepList" class="d-flex flex-column gap-2">
-            ${steps.map(s => renderStepCard(s)).join('')}
-        </div>
+    const desc = el('div', 'text-muted small', template.description || '');
+    info.appendChild(desc);
 
-        <div class="d-flex gap-2 justify-content-end mt-3">
-            <button class="btn btn-primary" id="editTemplateBtn">Edit Template</button>
-            <button class="btn btn-danger" id="deleteTemplateBtn">Delete</button>
-            <button class="btn btn-secondary" onclick="closeModal()">Close</button>
-        </div>
-    `;
-    openModal(html);
-    initDragAndDrop();
-    bindTemplateEditorEvents(template, steps);
+    wrapper.appendChild(info);
+
+    // Buttons row
+    const actionsRow = el('div', 'd-flex justify-content-between mb-2');
+
+    const leftBtns = el('div', 'd-flex gap-2');
+
+    const saveOrderBtn = el('button', 'btn btn-primary btn-sm', 'Save Order');
+    saveOrderBtn.id = 'saveOrderBtn';
+
+    const addStepBtn = el('button', 'btn btn-primary btn-sm', 'Add Step');
+    addStepBtn.id = 'addStepBtn';
+
+    leftBtns.appendChild(saveOrderBtn);
+    leftBtns.appendChild(addStepBtn);
+
+    actionsRow.appendChild(leftBtns);
+    wrapper.appendChild(actionsRow);
+
+    // Step list
+    const stepList = el('div', 'd-flex flex-column gap-2');
+    stepList.id = 'stepList';
+
+    steps.forEach(step => {
+        stepList.appendChild(renderStepCard(step));
+    });
+
+    wrapper.appendChild(stepList);
+
+    // Footer buttons
+    const footer = el('div', 'd-flex gap-2 justify-content-end mt-3');
+
+    const editBtn = el('button', 'btn btn-primary', 'Edit Template');
+    editBtn.id = 'editTemplateBtn';
+
+    const deleteBtn = el('button', 'btn btn-danger', 'Delete');
+    deleteBtn.id = 'deleteTemplateBtn';
+
+    const closeBtn = el('button', 'btn btn-secondary', 'Close');
+    closeBtn.addEventListener('click', closeModal);
+
+    footer.appendChild(editBtn);
+    footer.appendChild(deleteBtn);
+    footer.appendChild(closeBtn);
+
+    wrapper.appendChild(footer);
+
+    return wrapper;
 }
 
 function renderStepCard(step) {
-    return `
-        <div class="card msp-card step-card" draggable="true" data-id="${step.id}">
-            <div class="card-body d-flex justify-content-between align-items-center">
+    const card = el('div', 'card msp-card step-card');
+    card.setAttribute('draggable', 'true');
+    card.dataset.id = step.id;
 
-                <div>
-                    <div class="fw-semibold">${step.title}</div>
-                    <div class="text-muted small">${step.description || ''}</div>
-                </div>
+    const body = el('div', 'card-body d-flex justify-content-between align-items-center');
 
-                <div class="d-flex gap-1">
-                    <button class="btn btn-sm btn-primary edit-step">Edit</button>
-                    <button class="btn btn-sm btn-outline-danger delete-step">Delete</button>
-                </div>
+    // Left content
+    const left = el('div');
 
-            </div>
-        </div>
-    `;
+    const title = el('div', 'fw-semibold', step.title);
+    const desc = el('div', 'text-muted small', step.description || '');
+
+    left.appendChild(title);
+    left.appendChild(desc);
+
+    // Right buttons
+    const right = el('div', 'd-flex gap-1');
+
+    const editBtn = el('button', 'btn btn-sm btn-primary edit-step', 'Edit');
+    const deleteBtn = el('button', 'btn btn-sm btn-outline-danger delete-step', 'Delete');
+
+    right.appendChild(editBtn);
+    right.appendChild(deleteBtn);
+
+    body.appendChild(left);
+    body.appendChild(right);
+
+    card.appendChild(body);
+
+    return card;
 }
 
 function bindTemplateEditorEvents(template, steps) {

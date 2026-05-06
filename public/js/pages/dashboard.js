@@ -24,15 +24,38 @@ function initPage() {
 			className: 'task-complete',
 			order: 1
 		},
+		resolved: { 
+			label: 'Atera - Resolved', 
+			color: '#9ca3af',
+			className: 'task-complete',
+			order: 1
+		},
+		closed: { 
+			label: 'Atera - Closed', 
+			color: '#9ca3af',
+			className: 'task-complete',
+			order: 1
+		},
+		replied: { 
+			label: 'Atera - Replied', 
+			color: '#9ca3af',
+			className: 'task-complete',
+			order: 1
+		},
 		blocked: { 
 			label: 'Blocked', 
 			color: '#ef4444',
-			order: 2
+			order: 3
+		},
+		open: { 
+			label: 'Open', 
+			color: '#f59e0b',
+			order: 4
 		},
 		in_progress: { 
 			label: 'In Progress', 
 			color: '#f59e0b',
-			order: 3
+			order: 4
 		},
 		pending: { 
 			label: 'Pending', 
@@ -120,35 +143,52 @@ function toggleView(view) {
         view === 'list' ? 'block' : 'none';
 }
 
+function el(tag, className, text) {
+    const e = document.createElement(tag);
+    if (className) e.className = className;
+    if (text !== undefined) e.innerText = text;
+    return e;
+}
+
 /*----------- Status Filter ------------*/
 function renderStatusLegend() {
     const container = document.getElementById('statusLegend');
-	container.innerHTML = Object.entries(statusConfig).map(([key, cfg]) => `
-		<label class="d-flex align-items-center gap-2">
-			<input 
-				type="checkbox" 
-				value="${key}" 
-				${appState.filters.statuses.includes(key) ? 'checked' : ''}
-			>
-			<span style="color:${cfg.color}; font-weight:bold;">●</span>
-			${cfg.label}
-		</label>
-	`).join('');
-	document.getElementById('statusLegend')
-		.addEventListener('change', () => {
-			const container = document.getElementById('statusLegend');
-			setState(state => {
-				state.filters.statuses = Array.from(
-					document.querySelectorAll('#statusLegend input:checked')
-				).map(i => i.value);
-			});
-		});
+    container.innerHTML = '';
+
+    Object.entries(statusConfig).forEach(([key, cfg]) => {
+        const label = el('label', 'd-flex align-items-center gap-2');
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.value = key;
+        input.checked = appState.filters.statuses.includes(key);
+
+        const dot = el('span');
+        dot.style.color = cfg.color;
+        dot.style.fontWeight = 'bold';
+        dot.innerText = '●';
+
+        label.appendChild(input);
+        label.appendChild(dot);
+        label.appendChild(document.createTextNode(cfg.label));
+
+        container.appendChild(label);
+    });
+
+    container.addEventListener('change', () => {
+        setState(state => {
+            state.filters.statuses = Array.from(
+                document.querySelectorAll('#statusLegend input:checked')
+            ).map(i => i.value);
+        });
+    });
 }
 
 /*----------- Customer Filter ------------*/
 function renderCustomerFilter() {
     const container = document.getElementById('customerFilterContainer');
-    container.innerHTML = buildSearchableSelect({
+    container.innerHTML = '';
+	container.appendChild(buildSearchableSelect({
         name: 'customerFilter',
         data: [
             { id: '', name: 'All Customers' },
@@ -157,7 +197,7 @@ function renderCustomerFilter() {
         placeholder: 'Filter Customers',
         multiple: true,
 		grouped: true
-    });
+    }));
     initSearchableSelects();
     const wrapper = container.querySelector('[data-name="customerFilter"]');
     wrapper.setValues(appState.filters.customers);
@@ -174,7 +214,7 @@ function getFilteredItems() {
     return appState.items.filter(t => {
         const matchesCustomer = !hasCustomerFilter ||
             customerSelected.includes(String(t.customer_id));
-        const matchesStatus = appState.filters.statuses.includes(t.status_name);
+        const matchesStatus = appState.filters.statuses.includes(t.status);
         return matchesCustomer && matchesStatus;
     });
 }
@@ -243,23 +283,81 @@ function groupItems(items) {
 
 function renderBoard() {
     const container = document.getElementById('boardView');
+
     const filtered = getFilteredItems();
     const buckets = groupItems(filtered);
-	let weekDates;
-	let ordered;
-	if (isCurrentWeek(appState.ui.currentWeekStart)) {
-		ordered = getRollingWeekDates(new Date());
-		weekDates = ordered;
-	} else {
-		weekDates = getWeekDates(appState.ui.currentWeekStart);
-		ordered = weekDates;
-	}
-	renderDateLabel(weekDates);
-	const columns = [
-		renderPastDueColumn(buckets.pastDue),
-		...buildColumns(ordered, buckets.days)
-	];
-    container.innerHTML = columns.join('');
+
+    let weekDates;
+    let ordered;
+
+    if (isCurrentWeek(appState.ui.currentWeekStart)) {
+        ordered = getRollingWeekDates(new Date());
+        weekDates = ordered;
+    } else {
+        weekDates = getWeekDates(appState.ui.currentWeekStart);
+        ordered = weekDates;
+    }
+
+    renderDateLabel(weekDates);
+
+    // -------- 1. Measure FIRST positions --------
+    const firstRects = new Map();
+    Array.from(container.children).forEach(el => {
+        firstRects.set(el.dataset.key, el.getBoundingClientRect());
+    });
+
+    // -------- 2. Build new columns --------
+    const newColumns = [];
+
+    if (buckets.pastDue.length > 0) {
+        const col = renderPastDueColumn(buckets.pastDue);
+        col.dataset.key = 'pastDue';
+        newColumns.push(col);
+    }
+
+    buildColumns(ordered, buckets.days).forEach((col, i) => {
+        col.dataset.key = col.dataset.key || `day-${i}`;
+        newColumns.push(col);
+    });
+
+    // -------- 3. Replace DOM --------
+    container.innerHTML = '';
+    newColumns.forEach(col => {
+        col.classList.add('entering'); // for fade-in
+        container.appendChild(col);
+    });
+
+    // -------- 4. Measure LAST positions --------
+    const lastRects = new Map();
+    Array.from(container.children).forEach(el => {
+        lastRects.set(el.dataset.key, el.getBoundingClientRect());
+    });
+
+    // -------- 5. Animate (FLIP) --------
+    Array.from(container.children).forEach(el => {
+        const key = el.dataset.key;
+        const first = firstRects.get(key);
+        const last = lastRects.get(key);
+
+        if (first && last) {
+			const dx = first.left - last.left;
+
+			if (dx !== 0) {
+				el.style.transform = `translateX(${dx}px)`;
+
+				requestAnimationFrame(() => {
+					el.style.transform = '';
+				});
+			}
+		}
+
+        // fade in new columns
+        requestAnimationFrame(() => {
+			requestAnimationFrame(() => {
+				el.classList.remove('entering');
+			});
+		});
+    });
 }
 
 function renderDateLabel(dates) {
@@ -275,8 +373,6 @@ function buildColumns(orderedDates, dayBuckets) {
         const d = orderedDates[i];
         const day = d.getDay();
         if (day === 6) {
-            const satKey = d.toDateString();
-
             const next = orderedDates[i + 1];
             let sunItems = [];
 
@@ -286,8 +382,9 @@ function buildColumns(orderedDates, dayBuckets) {
             }
             cols.push(
                 renderWeekendColumn(
-                    dayBuckets[satKey] || [],
-                    sunItems
+                    dayBuckets[d.toDateString()] || [],
+                    sunItems,
+					`weekend-${d.toDateString()}`
                 )
             );
         }
@@ -295,7 +392,8 @@ function buildColumns(orderedDates, dayBuckets) {
             cols.push(
                 renderWeekendColumn(
                     [],
-                    dayBuckets[d.toDateString()] || []
+                    dayBuckets[d.toDateString()] || [],
+					`weekend-${d.toDateString()}`
                 )
             );
         }
@@ -312,44 +410,93 @@ function buildColumns(orderedDates, dayBuckets) {
 }
 
 function renderPastDueColumn(items) {
-    return renderColumn('Past Due', items);
+    const col = renderColumn(null, 'Past Due', items);
+    col.dataset.key = 'pastDue';
+    return col;
 }
 
 function renderDayColumn(date, items) {
-    return renderColumn(
+    const col = renderColumn(
+        date,
         date.toLocaleDateString([], { weekday: 'short' }),
         items
     );
+    col.dataset.key = date.toDateString(); // stable identity
+    return col;
 }
 
-function renderWeekendColumn(satItems, sunItems) {
-    return `
-        <div class="board-column">
-            <div class="board-header">Weekend</div>
-            <div class="weekend-split">
-                <div class="weekend-half">
-                    <strong>Sat</strong>
-                    ${satItems.map(renderDashboardItem).join('')}
-                </div>
-                <div class="weekend-half">
-                    <strong>Sun</strong>
-                    ${sunItems.map(renderDashboardItem).join('')}
-                </div>
-            </div>
-        </div>
-    `;
+function renderWeekendColumn(satItems, sunItems, key) {
+    const column = el('div', 'board-column');
+    column.dataset.key = key;
+
+    const header = el('div', 'board-header', 'Weekend');
+
+    const split = el('div', 'weekend-split');
+
+    const sat = el('div', 'weekend-half');
+    sat.appendChild(el('strong', null, 'Sat'));
+    satItems.forEach(i => sat.appendChild(renderDashboardItem(i)));
+
+    const sun = el('div', 'weekend-half');
+    sun.appendChild(el('strong', null, 'Sun'));
+    sunItems.forEach(i => sun.appendChild(renderDashboardItem(i)));
+
+    split.appendChild(sat);
+    split.appendChild(sun);
+
+    column.appendChild(header);
+    column.appendChild(split);
+
+    return column;
 }
 
-function renderColumn(title, items) {
+function renderColumn(date, title, items) {
     const sorted = sortItems(items);
-    return `
-        <div class="board-column">
-            <div class="board-header">${title}</div>
-            <div class="board-content">
-                ${sorted.map(renderDashboardItem).join('')}
-            </div>
-        </div>
-    `;
+
+    const column = el('div', 'board-column');
+
+    const header = el('div', 'board-header');
+    header.appendChild(document.createTextNode(title));
+
+    if (title !== 'Past Due' && date) {
+        const btn = el('button', 'btn btn-sm', '+');
+        btn.addEventListener('click', () => {
+            openCreateTaskModal(date.toISOString());
+        });
+        header.appendChild(btn);
+    }
+
+    const content = el('div', 'board-content');
+
+    sorted.forEach(item => {
+        content.appendChild(renderDashboardItem(item));
+    });
+
+    column.appendChild(header);
+    column.appendChild(content);
+
+    return column;
+}
+
+function renderDashboardItem(item) {
+    const div = el('div', `dashboard-item ${item.isComplete ? 'task-complete-card' : ''}`);
+
+    const strong = el('strong', null, formatItemTitle(item));
+    const small = el('small', null, item.customer_name || 'Internal');
+
+    div.appendChild(strong);
+    div.appendChild(document.createElement('br'));
+    div.appendChild(small);
+
+    div.addEventListener('click', () => {
+        if (item.type === 'ticket') {
+            window.open(`https://app.atera.com/new/ticket/${item.id}`, '_blank');
+        } else {
+            loadTask(item.id);
+        }
+    });
+
+    return div;
 }
 
 function getMonday(d) {
@@ -416,36 +563,76 @@ function closeDrawer() {
 
 /* ---------------- TASK LOADING ---------------- */
 async function loadTask(id) {
-	document.getElementById('drawerSteps').innerHTML = 'Loading...';
-	openDrawer();
-	
+    const stepsContainer = document.getElementById('drawerSteps');
+    const titleEl = document.getElementById('drawerTitle');
+    const metaEl = document.getElementById('drawerMeta');
+
+    stepsContainer.innerHTML = 'Loading...';
+    openDrawer();
+
     const res = await api_fetch('GET', `/task/${id}`, null);
     const task = res.task;
     const steps = res.steps;
-    currentTaskId = id;
-    document.getElementById('drawerTitle').innerText = task.name;
-    document.getElementById('drawerMeta').innerText =
-        `${task.customer_name} • Due ${task.due_date}`;
-    let html = '';
-    steps.forEach(step => {
-        html += `
-        <div class="card mb-2 card-row">
-            <label>
-                <input type="checkbox"
-                    ${step.is_completed ? "checked" : ""}
-                    onchange="updateStep(${step.id}, this.checked)">
-                <strong>${step.title}</strong>
-            </label>
 
-            <textarea class="form-control mt-2"
-                placeholder="Notes..."
-                onblur="updateStep(${step.id}, this.closest('.card').querySelector('input').checked, this.value)">
-                ${step.notes || ''}
-            </textarea>
-        </div>
-        `;
+    currentTaskId = id;
+
+    titleEl.innerText = task.name;
+	if (!task.template_id) {
+        const btn = document.createElement('button');
+        btn.className = 'btn btn-sm btn-outline-secondary ms-2';
+        btn.innerText = 'Edit Task';
+
+        btn.addEventListener('click', () => openEditTaskModal(task));
+
+        titleEl.appendChild(btn);
+    }
+	
+    metaEl.innerHTML = '';
+    const metaText = document.createTextNode(
+        `${task.customer_name || 'Internal'}
+		Due ${(new Date(task.due_date)).toLocaleDateString()}`
+    );
+    metaEl.appendChild(metaText);
+
+    stepsContainer.innerHTML = '';
+    steps.forEach(step => {
+        const card = document.createElement('div');
+        card.className = 'card mb-2 card-row';
+        const label = document.createElement('label');
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = !!step.is_completed;
+
+        checkbox.addEventListener('change', () => {
+            updateStep(step.id, checkbox.checked);
+        });
+
+        const strong = el('strong', null, step.title);
+
+        label.appendChild(checkbox);
+        label.appendChild(document.createTextNode(' '));
+        label.appendChild(strong);
+
+        // Notes textarea
+        const textarea = document.createElement('textarea');
+        textarea.className = 'form-control mt-2';
+        textarea.placeholder = 'Notes...';
+        textarea.value = step.notes || '';
+
+        textarea.addEventListener('blur', () => {
+            updateStep(
+                step.id,
+                checkbox.checked,
+                textarea.value
+            );
+        });
+
+        card.appendChild(label);
+        card.appendChild(textarea);
+
+        stepsContainer.appendChild(card);
     });
-    document.getElementById('drawerSteps').innerHTML = html;
 }
 
 /* ---------------- STEP UPDATE ---------------- */
@@ -482,33 +669,70 @@ async function completeTask() {
 }
 
 function formatItemTitle(t) {
-    if (!t.due_date) return `${t.name} - ${t.customer_name}`;
-	if (t.status_name == "complete") return t.name;
+    if (!t.due_date || t.isComplete) return t.name;
     const date = new Date(t.due_date);
     const hasTime =
         date.getHours() !== 0 ||
-        date.getMinutes() !== 0;
+        date.getMinutes() !== 0 || 
+		(date.getHours() !== 5 &&
+        date.getMinutes() !== 0);
 
     if (!hasTime) return t.name;
     const time = date.toLocaleTimeString([], {
         hour: 'numeric',
         minute: '2-digit'
     });
-    return `${time} - ${t.name} - ${t.customer_name}`;
+    return `${time} - ${t.name}`;
 }
 
-function renderDashboardItem(item) {
-  const div = document.createElement('div');
-  div.className = `dashboard-item ${item.isComplete ? 'task-complete-card' : ''}`;
-  div.innerText = "<strong>"+formatItemTitle(item)+"</strong><br><small>"+item.customer_name+"</small>";
+/* ---------------- Manual Task ---------------- */
+function getTaskFormFields() {
+    return [
+	    { name: 'name', label: 'Name', type: 'text', required: true },
+        { name: 'description', label: 'Description', type: 'textarea' },
+		{ name: 'due_date', label: 'Due Date', type: 'date', placeholder: (new Date()).toISOString().slice(0,10) },
+        {
+            name: 'customer_id',
+            label: 'Customer',
+            type: 'select',
+            options: flattenData(data.customers, 'customers'),
+			multiple: true,
+			grouped:true
+        },
+        {
+            name: 'group_id',
+            label: 'Group',
+            type: 'select',
+            options: data.groups
+        }
+    ];
+}
 
-  div.addEventListener('click', () => {
-    if (item.type === 'ticket') {
-      window.open(`https://app.atera.com/new/ticket/${item.id}`, '_blank');
-    } else {
-      loadTask(item.id);
+function openCreateTaskModal(prefillDate = null) {
+	const initialValues = {}
+	if (prefillDate) {
+        const d = new Date(prefillDate);
+        initialValues.due_date = d.toISOString().slice(0,10);
     }
-  });
+	openFormModal({
+        title: 'Create Task',
+        fields: getTaskFormFields(),
+		initialValues: initialValues,
+        onSubmit: async (formData) => {
+            await api_fetch('POST', '/task', formData);
+            location.reload();
+        }
+    });
+}
 
-  return div;
+function openEditTaskModal(task) {
+	openFormModal({
+        title: 'Edit Task',
+        fields: getTaskFormFields(),
+		initialValues: task,
+        onSubmit: async (formData) => {
+            await api_fetch('PUT', `/task/${template.id}`, formData);
+            location.reload();
+        }
+    });
 }
